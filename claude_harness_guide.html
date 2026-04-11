@@ -434,6 +434,18 @@ footer p { font-size: 12px; color: var(--ink-light); font-family: var(--mono); }
     <a class="nav-item" href="#s7-1"><span class="nav-num">7.1</span>검토 시점 정의</a>
   </div>
   <div class="nav-group">
+    <div class="nav-group-label">8부 — 컨텍스트 엔지니어링</div>
+    <a class="nav-item" href="#s8-1"><span class="nav-num">8.1</span>컨텍스트란?</a>
+    <a class="nav-item" href="#s8-2"><span class="nav-num">8.2</span>컨텍스트 설계 원칙</a>
+    <a class="nav-item" href="#s8-3"><span class="nav-num">8.3</span>컨텍스트 압축</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">9부 — 비용 관리</div>
+    <a class="nav-item" href="#s9-1"><span class="nav-num">9.1</span>비용이 쌓이는 구조</a>
+    <a class="nav-item" href="#s9-2"><span class="nav-num">9.2</span>모델 선택 전략</a>
+    <a class="nav-item" href="#s9-3"><span class="nav-num">9.3</span>캐싱과 배치</a>
+  </div>
+  <div class="nav-group">
     <div class="nav-group-label">체크리스트</div>
     <a class="nav-item" href="#checklist"><span class="nav-num">✓</span>실전 체크리스트</a>
   </div>
@@ -1465,6 +1477,291 @@ fastapi==0.104.1</pre>
     </div>
   </section>
 
+  </section>
+
+  <!-- 8부 -->
+  <div class="part-header" id="part8">
+    <h2>8부 — 컨텍스트 엔지니어링</h2>
+    <div class="part-sub">CONTEXT ENGINEERING</div>
+  </div>
+
+  <!-- 8.1 -->
+  <section class="section" id="s8-1">
+    <h2 class="section-title">8-1. 컨텍스트란 무엇인가</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>프롬프트 엔지니어링이 "Claude에게 어떻게 말을 거는가"라면, 컨텍스트 엔지니어링은 "Claude의 작업 창에 무엇을 담을 것인가"입니다.</p>
+        <p>Claude는 한 번에 처리할 수 있는 텍스트 양(컨텍스트 창)에 한계가 있어요. 이 공간에 무엇을 넣고 무엇을 빼는지가 결과 품질과 비용 모두에 직결됩니다. 관련 없는 정보가 많을수록 Claude의 집중도가 떨어지고 토큰 비용이 올라가요.</p>
+        <p>쉽게 말해 <strong>컨텍스트 창은 책상 위의 공간</strong>이에요. 필요한 것만 올려두면 작업이 빠르고 정확하지만, 온갖 것들이 쌓여 있으면 원하는 걸 찾기도 어렵고 공간도 부족해요.</p>
+      </div>
+    </div>
+    <div class="layer principle">
+      <div class="layer-header"><span class="layer-badge">원칙</span><span class="layer-title">무엇을 해야 하는가</span></div>
+      <div class="layer-body">
+        <ul>
+          <li>지금 작업에 필요한 정보만 컨텍스트에 포함하세요.</li>
+          <li>파일 전체보다 관련 함수나 섹션만 넘기세요.</li>
+          <li>이전 대화가 길어지면 주기적으로 요약해서 압축하세요.</li>
+          <li>CLAUDE.md가 잘 작성되어 있으면 반복 설명이 줄어들어요.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">컨텍스트 창 구성 요소</span></div>
+      <div class="layer-body">
+<pre>Claude의 컨텍스트 창
+├── 시스템 프롬프트 / CLAUDE.md     <span class="cm">← 고정 영역 (매번 포함)</span>
+├── SKILL.md (해당 작업 시)          <span class="cm">← 작업별 로드</span>
+├── 이전 대화 내역                   <span class="cm">← 길어질수록 위험</span>
+├── 현재 파일/코드 내용              <span class="cm">← 필요한 부분만</span>
+└── 사용자 요청                      <span class="cm">← 현재 작업</span></pre>
+        <h3>컨텍스트 효율 비교</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>방식</th><th>토큰 사용</th><th>결과 품질</th></tr></thead>
+            <tbody>
+              <tr><td>파일 전체를 통째로 넘김</td><td class="td-warn">높음</td><td class="td-warn">집중도 낮음</td></tr>
+              <tr><td>관련 함수/섹션만 발췌</td><td class="td-good">낮음</td><td class="td-good">집중도 높음</td></tr>
+              <tr><td>이전 대화 전체 유지</td><td class="td-warn">높음</td><td class="td-warn">초반 내용 희석</td></tr>
+              <tr><td>중간 요약 후 계속</td><td class="td-good">낮음</td><td class="td-good">핵심 유지</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8.2 -->
+  <section class="section" id="s8-2">
+    <h2 class="section-title">8-2. 컨텍스트 설계 원칙</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>같은 작업을 시켜도 컨텍스트를 어떻게 구성하느냐에 따라 결과물이 크게 달라져요. 너무 적으면 Claude가 맥락을 모르고, 너무 많으면 중요한 것이 묻혀버려요.</p>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">좋은 컨텍스트 구성 패턴</span></div>
+      <div class="layer-body">
+        <h3>① 역할 → 배경 → 현재 상태 → 요청 순서</h3>
+<pre><span class="cm"># 좋은 컨텍스트 구성 순서</span>
+
+[역할]
+당신은 FastAPI 백엔드 개발자입니다.
+
+[배경]
+BIP-Pipeline 프로젝트의 NL2SQL 모듈을 개발 중입니다.
+Oracle DB 사용, 메타데이터는 OpenMetadata에서 관리합니다.
+
+[현재 상태]
+아래 함수가 Oracle에서 쿼리 실행 시 ORA-00907 오류가 납니다:
+```python
+{관련 코드만 발췌}
+```
+
+[요청]
+오류 원인을 분석하고 수정해주세요.</pre>
+
+        <h3>② 파일 전체 대신 관련 부분만</h3>
+<pre><span class="cm"># 나쁜 예 — 파일 전체 넘기기</span>
+"이 파일 전체를 보고 버그 찾아줘"
+→ 1000줄짜리 파일 전부 넘김
+
+<span class="cm"># 좋은 예 — 관련 함수만 발췌</span>
+"아래 함수에서 버그 찾아줘. 이 함수는 사용자 인증을 담당해."
+→ 해당 함수 30줄만 넘김</pre>
+
+        <h3>③ 외부 데이터 요약 후 전달</h3>
+<pre><span class="cm"># 나쁜 예 — 원본 데이터 통째로</span>
+"이 로그 파일 분석해줘" → 10MB 로그 파일 전체
+
+<span class="cm"># 좋은 예 — 요약 후 전달</span>
+"오류가 발생한 로그 라인만 추출해서 분석해줘"
+→ grep으로 오류 라인만 100줄 전달</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8.3 -->
+  <section class="section" id="s8-3">
+    <h2 class="section-title">8-3. 컨텍스트 압축</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>세션이 길어지면 초반의 중요한 내용이 희석되거나, 컨텍스트 한계에 부딪혀요. 주기적으로 압축하지 않으면 Claude가 초반 지시를 잊거나 방향이 흔들릴 수 있어요.</p>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">세션 중간 압축 패턴</span></div>
+      <div class="layer-body">
+        <h3>중간 요약 요청</h3>
+<pre>지금까지 작업한 내용을 아래 형식으로 요약해줘:
+
+## 완료된 작업
+- (목록)
+
+## 현재 상태
+- (파일명과 변경 사항)
+
+## 다음 할 것
+- (남은 작업)
+
+## 중요 결정 사항
+- (작업 중 내린 주요 결정들)
+
+이 요약을 바탕으로 새 세션에서 이어갈 수 있게 해줘.</pre>
+
+        <h3>새 세션에서 압축된 컨텍스트로 시작</h3>
+<pre><span class="cm">## 이전 세션 요약 (컨텍스트 복원용)</span>
+
+완료: FastAPI /query 엔드포인트 구현, Oracle 연결 설정
+현재 상태: nl2sql.py 수정 완료, 테스트 미실행
+다음 작업: pytest 실행 후 오류 수정
+중요 결정: ROWNUM 대신 FETCH FIRST 사용하기로 결정
+
+위 내용을 바탕으로 테스트 실행부터 이어서 진행해줘.</pre>
+
+        <h3>CLAUDE.md로 반복 컨텍스트 제거</h3>
+<pre><span class="cm"># 매번 설명하던 내용을 CLAUDE.md에 한 번만 작성</span>
+<span class="cm"># → 세션마다 반복 설명 불필요 → 컨텍스트 절약</span>
+
+<span class="hd">## 프로젝트 상태 (자동 로드)</span>
+현재 단계: NL2SQL 모듈 개발
+Oracle 버전: 19c
+주의: ROWNUM 대신 FETCH FIRST 사용
+테스트 DB: dev-oracle.internal:1521</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9부 -->
+  <div class="part-header" id="part9">
+    <h2>9부 — 비용 관리</h2>
+    <div class="part-sub">COST MANAGEMENT</div>
+  </div>
+
+  <!-- 9.1 -->
+  <section class="section" id="s9-1">
+    <h2 class="section-title">9-1. 비용이 쌓이는 구조</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>Claude API는 입력 토큰 + 출력 토큰 기준으로 과금돼요. 생각보다 빠르게 쌓이는 경우가 많은데, 주로 이 세 가지 때문이에요.</p>
+        <p><strong>반복 컨텍스트</strong> — 매 세션마다 같은 배경 설명을 긴 프롬프트로 넣는 것. CLAUDE.md로 해결 가능해요.</p>
+        <p><strong>불필요하게 긴 입력</strong> — 파일 전체를 넘기거나, 관련 없는 정보까지 포함하는 것. 컨텍스트 설계로 해결돼요.</p>
+        <p><strong>모델 오버스펙</strong> — 간단한 작업에 가장 비싼 모델을 쓰는 것. 작업별 모델 선택으로 해결돼요.</p>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">모델별 비용 구조 (2026 기준)</span></div>
+      <div class="layer-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>모델</th><th>상대적 비용</th><th>적합한 작업</th></tr></thead>
+            <tbody>
+              <tr><td>Claude Opus 4.6</td><td class="td-warn">높음</td><td>복잡한 추론, 아키텍처 설계, 어려운 버그</td></tr>
+              <tr><td>Claude Sonnet 4.6</td><td class="td-mid">중간</td><td>일반 코딩, 코드 리뷰, 문서 작성</td></tr>
+              <tr><td>Claude Haiku 4.5</td><td class="td-good">낮음</td><td>단순 반복 작업, 포맷 변환, 요약</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9.2 -->
+  <section class="section" id="s9-2">
+    <h2 class="section-title">9-2. 모델 선택 전략</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>모든 작업에 가장 비싼 모델을 쓸 필요가 없어요. 단순 포맷 변환, 요약, 반복 작업은 저렴한 모델로도 충분히 좋은 결과가 나와요. 모델을 전략적으로 선택하면 품질은 유지하면서 비용을 크게 줄일 수 있어요.</p>
+      </div>
+    </div>
+    <div class="layer principle">
+      <div class="layer-header"><span class="layer-badge">원칙</span><span class="layer-title">무엇을 해야 하는가</span></div>
+      <div class="layer-body">
+        <ul>
+          <li>복잡도에 맞는 모델을 선택하세요. 항상 최고 모델을 쓰지 마세요.</li>
+          <li>반복 작업과 단순 작업은 Haiku로 먼저 시도하세요.</li>
+          <li>결과가 불만족스러울 때 더 강한 모델로 올리세요.</li>
+          <li>오케스트레이터는 강한 모델, 서브에이전트는 저렴한 모델을 쓰세요.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">작업별 모델 선택 가이드</span></div>
+      <div class="layer-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>작업 유형</th><th>권장 모델</th><th>이유</th></tr></thead>
+            <tbody>
+              <tr><td>시스템 아키텍처 설계</td><td class="td-warn">Opus 4.6</td><td>복잡한 트레이드오프 판단 필요</td></tr>
+              <tr><td>어려운 버그 디버깅</td><td class="td-warn">Opus 4.6</td><td>깊은 추론 능력 필요</td></tr>
+              <tr><td>일반 기능 구현</td><td class="td-mid">Sonnet 4.6</td><td>품질과 비용 균형</td></tr>
+              <tr><td>코드 리뷰</td><td class="td-mid">Sonnet 4.6</td><td>패턴 인식 충분</td></tr>
+              <tr><td>문서/주석 작성</td><td class="td-good">Haiku 4.5</td><td>언어 작업, 추론 불필요</td></tr>
+              <tr><td>포맷 변환, 요약</td><td class="td-good">Haiku 4.5</td><td>단순 변환 작업</td></tr>
+              <tr><td>반복 배치 작업</td><td class="td-good">Haiku 4.5</td><td>대량 처리, 비용 중요</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9.3 -->
+  <section class="section" id="s9-3">
+    <h2 class="section-title">9-3. 캐싱과 배치 처리</h2>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>같은 시스템 프롬프트나 컨텍스트를 반복해서 넘기는 경우, Anthropic의 프롬프트 캐싱을 활용하면 입력 토큰 비용을 크게 줄일 수 있어요. 또한 긴급하지 않은 대량 작업은 배치 API로 처리하면 비용이 절반으로 줄어요.</p>
+      </div>
+    </div>
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">비용 절감 방법 3가지</span></div>
+      <div class="layer-body">
+        <h3>① 프롬프트 캐싱 (API 사용 시)</h3>
+<pre><span class="cm"># 긴 시스템 프롬프트나 문서는 캐싱 활용</span>
+<span class="cm"># 첫 호출: 전체 토큰 비용</span>
+<span class="cm"># 이후 호출: 캐시 히트 → 입력 토큰 90% 절감</span>
+
+messages=[
+    {
+        <span class="str">"role"</span>: <span class="str">"user"</span>,
+        <span class="str">"content"</span>: [
+            {
+                <span class="str">"type"</span>: <span class="str">"text"</span>,
+                <span class="str">"text"</span>: long_document,
+                <span class="str">"cache_control"</span>: {<span class="str">"type"</span>: <span class="str">"ephemeral"</span>}
+                <span class="cm"># ↑ 이 블록을 캐싱</span>
+            },
+            {<span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"text"</span>: user_question}
+        ]
+    }
+]</pre>
+
+        <h3>② 배치 API (대량 처리 시)</h3>
+<pre><span class="cm"># 긴급하지 않은 대량 작업 → Message Batches API</span>
+<span class="cm"># 일반 API 대비 50% 비용 절감</span>
+<span class="cm"># 24시간 내 처리 (실시간 불필요한 작업에 적합)</span>
+
+<span class="cm"># 적합한 작업: 대량 문서 요약, 코드 분석, 데이터 변환</span>
+<span class="cm"># 부적합한 작업: 대화형 작업, 즉시 응답 필요한 작업</span></pre>
+
+        <h3>③ CLAUDE.md로 반복 컨텍스트 제거</h3>
+<pre><span class="cm"># 매 세션마다 반복하던 설명 → CLAUDE.md에 한 번만</span>
+<span class="cm"># 프롬프트 길이 감소 → 토큰 절감</span>
+
+<span class="cm"># 절감 예시:</span>
+<span class="cm"># 반복 설명 없이: 평균 500 토큰/세션</span>
+<span class="cm"># CLAUDE.md 활용: 평균 100 토큰/세션 (80% 절감)</span></pre>
+      </div>
+    </div>
+  </section>
+
   <!-- 체크리스트 -->
   <div class="part-header" id="checklist">
     <h2>실전 체크리스트</h2>
@@ -1514,11 +1811,21 @@ fastapi==0.104.1</pre>
     </ul>
   </div>
 
+  <div class="checklist-part">
+    <div class="checklist-part-title">비용 관리</div>
+    <ul class="checklist">
+      <li><span class="chk"></span>작업 유형별로 적합한 모델 선택 (전체를 Opus로 하지 않기)</li>
+      <li><span class="chk"></span>CLAUDE.md로 반복 컨텍스트 제거 (매번 설명 줄이기)</li>
+      <li><span class="chk"></span>긴 작업은 세션 중간 요약으로 컨텍스트 압축</li>
+      <li><span class="chk"></span>월 사용량 주기적으로 확인</li>
+    </ul>
+  </div>
+
 </main>
 </div>
 
 <footer>
-  <p>claude.harness.guide · v3.1</p>
+  <p>claude.harness.guide · v3.2</p>
   <p>Claude Code CLI 기준 · API / SDK 공통 적용</p>
 </footer>
 
