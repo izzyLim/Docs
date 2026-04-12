@@ -215,8 +215,10 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
   <div class="ng">
     <div class="nl">개요</div>
     <a class="na active" href="#intro"><span class="nn">00</span>개요 및 위치</a>
-    <a class="na" href="#when"><span class="nn">01</span>언제 쓰는가</a>
-    <a class="na" href="#arch"><span class="nn">02</span>전체 아키텍처</a>
+    <a class="na" href="#compare"><span class="nn">01</span>LangChain · LangGraph 비교</a>
+    <a class="na" href="#compare-sdk"><span class="nn">02</span>타 SDK 비교</a>
+    <a class="na" href="#when"><span class="nn">03</span>언제 쓰는가</a>
+    <a class="na" href="#arch"><span class="nn">04</span>전체 아키텍처</a>
   </div>
   <div class="ng">
     <div class="nl">핵심 API</div>
@@ -266,9 +268,196 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
     </div>
   </section>
 
-  <!-- 01. 언제 쓰는가 -->
+  <!-- 01. LangChain · LangGraph 비교 -->
+  <div class="ph" id="compare">
+    <div class="ph-line"><span class="ph-num">01</span><span class="ph-title">LangChain · LangGraph · Deep Agents 비교</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">세 가지는 같은 스택의 다른 레이어</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">핵심</span><span class="lb-title">대체 관계가 아닌 계층 관계</span></div>
+      <div class="lb">
+        <p>세 가지 모두 LangChain이 만들었지만 역할이 완전히 달라요. 서로 대체하는 게 아니라 아래 레이어 위에 쌓이는 구조예요.</p>
+        <p style="font-family:var(--mono);font-size:12px;background:#f0ede8;padding:12px 16px;border-radius:6px;margin-top:8px;line-height:1.9">
+          Deep Agents SDK &nbsp;← 에이전트 하네스 (batteries included)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ 위에 구축<br>
+          LangGraph &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 에이전트 런타임 (실행 인프라)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ 위에 구축<br>
+          LangChain &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 에이전트 프레임워크 (추상화 레이어)
+        </p>
+      </div>
+    </div>
+
+    <h3>역할별 상세 비교</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>구분</th><th style="color:var(--blue)">LangChain</th><th style="color:var(--grn)">LangGraph</th><th style="color:var(--acc)">Deep Agents</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>레이어</strong></td>
+            <td class="tb">에이전트 프레임워크</td>
+            <td class="tg">에이전트 런타임</td>
+            <td class="ty">에이전트 하네스</td>
+          </tr>
+          <tr>
+            <td><strong>역할</strong></td>
+            <td>모델·툴·루프 추상화</td>
+            <td>그래프 기반 실행 엔진</td>
+            <td>계획·파일시스템·서브에이전트 내장</td>
+          </tr>
+          <tr>
+            <td><strong>제어 수준</strong></td>
+            <td class="tg">높음 (유연)</td>
+            <td class="tg">매우 높음 (저수준)</td>
+            <td class="ty">중간 (의견 포함)</td>
+          </tr>
+          <tr>
+            <td><strong>시작 난이도</strong></td>
+            <td class="tg">쉬움</td>
+            <td class="ty">중간</td>
+            <td class="tg">가장 쉬움</td>
+          </tr>
+          <tr>
+            <td><strong>플래닝 도구</strong></td>
+            <td class="tr">직접 구현</td>
+            <td class="tr">직접 구현</td>
+            <td class="tg">write_todos 내장</td>
+          </tr>
+          <tr>
+            <td><strong>파일시스템</strong></td>
+            <td class="tr">직접 구현</td>
+            <td class="tr">직접 구현</td>
+            <td class="tg">ls/read/write 내장</td>
+          </tr>
+          <tr>
+            <td><strong>컨텍스트 요약</strong></td>
+            <td class="tr">직접 구현</td>
+            <td class="tr">직접 구현</td>
+            <td class="tg">자동 (85% 도달 시)</td>
+          </tr>
+          <tr>
+            <td><strong>서브에이전트</strong></td>
+            <td class="tr">직접 구현</td>
+            <td class="ty">직접 그래프 설계</td>
+            <td class="tg">task 도구 내장</td>
+          </tr>
+          <tr>
+            <td><strong>스트리밍</strong></td>
+            <td class="tg">지원</td>
+            <td class="tg">지원</td>
+            <td class="tg">LangGraph 상속</td>
+          </tr>
+          <tr>
+            <td><strong>HITL</strong></td>
+            <td class="ty">기본 지원</td>
+            <td class="tg">interrupt 완전 지원</td>
+            <td class="tg">interrupt_on으로 선언적</td>
+          </tr>
+          <tr>
+            <td><strong>배포</strong></td>
+            <td>자유</td>
+            <td>LangGraph Platform</td>
+            <td>LangGraph Platform</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>언제 무엇을 쓰는가</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>상황</th><th>선택</th></tr></thead>
+        <tbody>
+          <tr><td>빠른 에이전트 프로토타입, 단순 툴 호출 루프</td><td class="tb">LangChain create_agent</td></tr>
+          <tr><td>복잡한 상태 그래프, 정밀한 흐름 제어, 결정론적 파이프라인</td><td class="tg">LangGraph 직접 설계</td></tr>
+          <tr><td>계획·파일·서브에이전트가 필요한 다단계 자율 작업</td><td class="ty">Deep Agents SDK</td></tr>
+          <tr><td>온톨로지/시맨틱 레이어 위에서 자유 질의</td><td class="ty">Deep Agents SDK</td></tr>
+          <tr><td>정해진 파이프라인 안에서 Deep Agents 서브루틴</td><td class="tn">LangGraph + Deep Agents 조합</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 02. 타 SDK 비교 -->
+  <div class="ph" id="compare-sdk">
+    <div class="ph-line"><span class="ph-num">02</span><span class="ph-title">Claude Agent SDK · Codex SDK 비교</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">유사한 외부 SDK와의 비교 (공식 문서 기준)</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>항목</th><th style="color:var(--acc)">LangChain Deep Agents</th><th style="color:var(--pur)">Claude Agent SDK</th><th style="color:var(--grn)">OpenAI Codex SDK</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>주요 용도</strong></td>
+            <td>범용 에이전트 (코딩 포함)</td>
+            <td>Claude 기반 코딩 에이전트</td>
+            <td>코딩 작업 특화</td>
+          </tr>
+          <tr>
+            <td><strong>모델 지원</strong></td>
+            <td class="tg">모델 무관 (100+ 제공자)</td>
+            <td class="ty">Claude 계열 특화</td>
+            <td class="ty">OpenAI 모델 특화</td>
+          </tr>
+          <tr>
+            <td><strong>장기 메모리</strong></td>
+            <td class="tg">Memory Store (스레드 간)</td>
+            <td class="tr">없음</td>
+            <td class="tr">없음</td>
+          </tr>
+          <tr>
+            <td><strong>파일시스템 백엔드</strong></td>
+            <td class="tg">플러그인형 (State/FS/Store/Composite)</td>
+            <td class="ty">로컬</td>
+            <td class="ty">로컬/클라우드</td>
+          </tr>
+          <tr>
+            <td><strong>보안 설정</strong></td>
+            <td>툴별 HITL 선언적 설정</td>
+            <td>권한 모드 + Hooks</td>
+            <td>OS 레벨 샌드박스 모드</td>
+          </tr>
+          <tr>
+            <td><strong>프론트엔드 연동</strong></td>
+            <td class="tg">React 통합 지원</td>
+            <td class="tr">서버 사이드만</td>
+            <td class="tr">서버 사이드만</td>
+          </tr>
+          <tr>
+            <td><strong>관찰 가능성</strong></td>
+            <td class="tg">LangSmith 네이티브</td>
+            <td class="tr">없음</td>
+            <td>OpenAI Traces</td>
+          </tr>
+          <tr>
+            <td><strong>배포</strong></td>
+            <td>LangGraph Platform</td>
+            <td>자체 호스팅</td>
+            <td>N/A</td>
+          </tr>
+          <tr>
+            <td><strong>라이선스</strong></td>
+            <td class="tg">MIT</td>
+            <td>MIT (Claude Code는 독점)</td>
+            <td class="tg">Apache-2.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>Yeji씨 상황 (Bedrock 환경)에서 선택</strong> Claude Agent SDK는 Bedrock 환경에서 잘 작동하지만 모델 고정 + 장기 메모리 없음. Deep Agents는 모델 무관이라 Bedrock의 Claude든 다른 모델이든 자유롭게 선택 가능하고 장기 메모리도 내장돼 있어요. 다만 Bedrock에서 LangSmith 연동이 제한될 수 있어 별도 확인이 필요해요.</div>
+    </div>
+  </section>
+
+  <!-- 03. 언제 쓰는가 -->
   <div class="ph" id="when">
-    <div class="ph-line"><span class="ph-num">01</span><span class="ph-title">언제 쓰는가</span></div>
+    <div class="ph-line"><span class="ph-num">03</span><span class="ph-title">언제 쓰는가</span></div>
     <div class="ph-div"></div>
   </div>
 
@@ -296,7 +485,7 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
 
   <!-- 02. 아키텍처 -->
   <div class="ph" id="arch">
-    <div class="ph-line"><span class="ph-num">02</span><span class="ph-title">전체 아키텍처</span></div>
+    <div class="ph-line"><span class="ph-num">04</span><span class="ph-title">전체 아키텍처</span></div>
     <div class="ph-div"></div>
   </div>
 
