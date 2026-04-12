@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Agents 기술 가이드</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f6f4f0;--s1:#ffffff;--s2:#f0ede8;--s3:#e8e4dc;
+  --b1:#ddd9d0;--b2:#c8c4b8;--ink:#1a1814;--mid:#524e48;
+  --dim:#9e9a92;--acc:#e05a1a;--acc2:#f07838;--al:#fef2ec;
+  --blue:#2460c8;--grn:#1a7840;--amb:#9a6010;--red:#c02020;
+  --pur:#5a38c8;--teal:#167868;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Noto Sans KR',sans-serif;
+  --serif:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8}
+
+/* header */
+.hdr{position:sticky;top:0;z-index:200;background:rgba(246,244,240,.96);backdrop-filter:blur(10px);border-bottom:2px solid var(--ink);padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:16px;font-weight:800;color:var(--ink)}
+.logo em{font-style:normal;color:var(--acc)}
+.vtag{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--b1);padding:3px 10px;border-radius:20px}
+
+/* layout */
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:1180px;margin:0 auto}
+
+/* sidebar */
+.sb{position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;padding:32px 16px 32px 24px;border-right:1px solid var(--b1)}
+.sb::-webkit-scrollbar{width:3px}
+.sb::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.ng{margin-bottom:24px}
+.nl{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;padding-left:8px}
+.na{display:flex;align-items:baseline;gap:8px;padding:5px 8px;border-radius:5px;color:var(--dim);text-decoration:none;font-size:13px;line-height:1.4;transition:all .15s;margin-bottom:1px;border-left:2px solid transparent}
+.na:hover{color:var(--ink);background:var(--s2)}
+.na.active{color:var(--acc);border-left-color:var(--acc);background:var(--al);font-weight:500}
+.nn{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
+
+/* main */
+.main{padding:56px 60px 100px;min-width:0}
+
+/* hero */
+.hero{margin-bottom:64px;padding-bottom:48px;border-bottom:2px solid var(--ink)}
+.hero-eye{font-family:var(--mono);font-size:11px;color:var(--acc);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.hero-eye::after{content:'';flex:1;height:1px;background:var(--b1)}
+.hero h1{font-family:var(--serif);font-size:48px;font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:20px}
+.hero h1 span{color:var(--acc)}
+.hero-desc{font-size:16px;line-height:1.8;color:var(--mid);max-width:600px;margin-bottom:28px}
+.meta-row{display:flex;gap:24px;flex-wrap:wrap}
+.meta-item{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.meta-item strong{color:var(--ink);font-weight:600;margin-right:4px}
+
+/* part header */
+.ph{margin:64px 0 36px;scroll-margin-top:74px}
+.ph-line{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.ph-num{font-family:var(--mono);font-size:11px;color:var(--acc);background:var(--al);border:1px solid rgba(224,90,26,.2);padding:3px 10px;border-radius:4px}
+.ph-title{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.ph-div{height:1px;background:var(--b1)}
+
+/* section */
+.sec{margin-bottom:52px;scroll-margin-top:74px}
+.sec-title{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--b1)}
+
+/* layers */
+.layer{border-radius:8px;margin-bottom:10px;overflow:hidden}
+.lh{display:flex;align-items:center;gap:10px;padding:10px 16px}
+.lb-badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:3px}
+.lb-title{font-size:13px;font-weight:500}
+.lb{padding:14px 18px 18px;font-size:14px;line-height:1.8}
+.lb p{margin-bottom:10px}.lb p:last-child{margin-bottom:0}
+.lb ul,.lb ol{padding-left:18px;margin-bottom:10px}
+.lb li{margin-bottom:4px}
+
+.layer.concept{background:#eef4ff;border:1px solid #b0c8f0}
+.layer.concept .lh{color:#1a50a0}
+.layer.concept .lb-badge{background:#d0e4ff;color:#1a50a0}
+.layer.concept .lb{color:#1a3a70}
+
+.layer.rule{background:#eef8f2;border:1px solid #90d0a8}
+.layer.rule .lh{color:#1a6840}
+.layer.rule .lb-badge{background:#c8ecd8;color:#1a6840}
+.layer.rule .lb{color:#143828}
+
+.layer.code{background:#18191e;border:1px solid #2a2e3a}
+.layer.code .lh{color:#8a92a8}
+.layer.code .lb-badge{background:#242830;color:#5a6278}
+.layer.code .lb{color:#b0bcd0}
+.layer.code h3{color:#8a92a8}
+
+.layer.warn{background:#fef2ec;border:1px solid rgba(224,90,26,.3)}
+.layer.warn .lh{color:var(--acc)}
+.layer.warn .lb-badge{background:var(--al);color:var(--acc)}
+.layer.warn .lb{color:#804010}
+
+.layer.new{background:#f0f8ec;border:1px solid #88c870}
+.layer.new .lh{color:#2a6818}
+.layer.new .lb-badge{background:#d0f0c0;color:#2a6818}
+.layer.new .lb{color:#1a4010}
+
+/* code */
+code{font-family:var(--mono);font-size:12px;background:var(--s2);color:var(--acc);padding:1px 5px;border-radius:3px;border:1px solid var(--b1)}
+.layer.code code{background:#242830;color:#f0a070;border-color:#333a48}
+.clabel{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:block}
+pre{background:#13141a;border:1px solid #24283a;border-radius:8px;padding:18px 22px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#c0cce0;margin:10px 0}
+.layer.code pre{background:#0e1016;border-color:#1e2230;margin:8px 0}
+.cm{color:#405060;font-style:italic}
+.kw{color:#6888d8}
+.str{color:#d09060}
+.fn{color:#d8c878}
+.hd{color:#50c8b0}
+.ac{color:#e09838}
+.gn{color:#68c888}
+
+/* table */
+.tw{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--s2);color:var(--mid);font-weight:600;padding:9px 14px;text-align:left;border-bottom:2px solid var(--b1);font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+td{padding:9px 14px;border-bottom:1px solid var(--b1);color:var(--mid);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--s2)}
+.tg{color:var(--grn);font-weight:500}
+.tb{color:var(--blue);font-weight:500}
+.tp{color:var(--pur);font-weight:500}
+.ty{color:var(--amb)}
+.tr{color:var(--red)}
+.tn{color:var(--teal);font-weight:500}
+
+/* callout */
+.callout{display:flex;gap:14px;padding:14px 18px;border-radius:8px;margin:16px 0;border-left:3px solid}
+.ci{font-size:15px;flex-shrink:0;margin-top:1px}
+.cb{font-size:13px;line-height:1.65}
+.cb strong{display:block;font-weight:600;margin-bottom:4px}
+.callout.tip{background:#edf7f0;border-color:var(--grn)}.callout.tip .cb{color:#0e3a20}
+.callout.info{background:#eef2fc;border-color:var(--blue)}.callout.info .cb{color:#102050}
+.callout.warn{background:#fef2ec;border-color:var(--acc)}.callout.warn .cb{color:#602010}
+.callout.new{background:#f0f8ec;border-color:#88c870}.callout.new .cb{color:#183010}
+
+/* flow */
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:14px 0}
+.fi{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 14px;font-size:12px;font-family:var(--mono);color:var(--mid)}
+.fa{color:var(--dim);font-size:14px}
+.fi.mw{border-color:rgba(90,56,200,.3);color:var(--pur);background:rgba(90,56,200,.06)}
+.fi.bd{border-color:rgba(36,96,200,.3);color:var(--blue);background:rgba(36,96,200,.06)}
+.fi.sk{border-color:rgba(26,120,64,.3);color:var(--grn);background:rgba(26,120,64,.06)}
+
+/* mw stack */
+.mw-stack{display:flex;flex-direction:column;gap:4px;margin:16px 0}
+.mw-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:6px;background:var(--s1);border:1px solid var(--b1)}
+.mw-num{font-family:var(--mono);font-size:11px;font-weight:700;width:24px;text-align:center;flex-shrink:0}
+.mw-name{font-family:var(--mono);font-size:12px;font-weight:600;flex:1}
+.mw-desc{font-size:12px;color:var(--mid)}
+.mw-tool{font-family:var(--mono);font-size:10px;color:var(--acc);background:var(--al);padding:2px 7px;border-radius:3px;flex-shrink:0}
+
+/* param table */
+.pt{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+.pt th{background:var(--s3);color:var(--mid);font-weight:600;padding:8px 12px;text-align:left;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.pt td{padding:8px 12px;border-bottom:1px solid var(--b1);color:var(--mid);vertical-align:top;font-size:12.5px}
+.pt tr:last-child td{border-bottom:none}
+.pt .pk{font-family:var(--mono);color:var(--ink);font-size:12px}
+.pt .pt-type{font-family:var(--mono);font-size:11px;color:var(--pur)}
+.pt .pt-def{font-family:var(--mono);font-size:11px;color:var(--teal)}
+
+/* backend cards */
+.bd-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0}
+.bd-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:18px 20px}
+.bd-title{font-weight:700;font-size:14px;margin-bottom:6px;font-family:var(--mono)}
+.bd-desc{font-size:12px;color:var(--mid);line-height:1.55;margin-bottom:8px}
+.bd-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid}
+.tag-g{color:var(--grn);border-color:rgba(26,120,64,.3);background:rgba(26,120,64,.06)}
+.tag-b{color:var(--blue);border-color:rgba(36,96,200,.3);background:rgba(36,96,200,.06)}
+.tag-p{color:var(--pur);border-color:rgba(90,56,200,.3);background:rgba(90,56,200,.06)}
+.tag-a{color:var(--amb);border-color:rgba(154,96,16,.3);background:rgba(154,96,16,.06)}
+
+/* checklist */
+.clpart{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:22px 26px;margin-bottom:20px}
+.cltitle{font-family:var(--serif);font-size:17px;font-weight:600;margin-bottom:14px}
+.cl{list-style:none}
+.cl li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--b1);font-size:13px;color:var(--mid)}
+.cl li:last-child{border-bottom:none}
+.chk{width:16px;height:16px;flex-shrink:0;margin-top:2px;border:1.5px solid var(--b2);border-radius:3px}
+
+h3{font-size:14px;font-weight:700;color:var(--ink);margin:18px 0 8px}
+.layer.code h3{color:#8a92a8}
+
+/* new badge */
+.new-badge{font-family:var(--mono);font-size:9px;font-weight:700;background:#d0f0c0;color:#1a6010;padding:2px 7px;border-radius:3px;letter-spacing:.06em;vertical-align:middle;margin-left:6px}
+
+footer{border-top:2px solid var(--ink);padding:28px 60px;display:flex;justify-content:space-between;align-items:center}
+footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
+
+@media(max-width:840px){
+  .layout{grid-template-columns:1fr}.sb{display:none}
+  .main{padding:28px 20px 60px}.hero h1{font-size:32px}
+  .bd-cards{grid-template-columns:1fr}
+  footer{flex-direction:column;gap:8px;padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="logo">Deep<em>Agents</em> 기술 가이드</span>
+  <span class="vtag">v0.5 · 2026.04 최신</span>
+</header>
+
+<div class="layout">
+
+<!-- 사이드바 -->
+<nav class="sb">
+  <div class="ng">
+    <div class="nl">개요</div>
+    <a class="na active" href="#intro"><span class="nn">00</span>개요 및 위치</a>
+    <a class="na" href="#when"><span class="nn">01</span>언제 쓰는가</a>
+    <a class="na" href="#arch"><span class="nn">02</span>전체 아키텍처</a>
+  </div>
+  <div class="ng">
+    <div class="nl">핵심 API</div>
+    <a class="na" href="#api"><span class="nn">03</span>create_deep_agent()</a>
+    <a class="na" href="#middleware"><span class="nn">04</span>미들웨어 스택</a>
+  </div>
+  <div class="ng">
+    <div class="nl">컨텍스트 관리</div>
+    <a class="na" href="#context"><span class="nn">05</span>컨텍스트 타입</a>
+    <a class="na" href="#memory-skills"><span class="nn">06</span>Memory vs Skills</a>
+    <a class="na" href="#compression"><span class="nn">07</span>자동 압축/요약</a>
+  </div>
+  <div class="ng">
+    <div class="nl">Backend 시스템</div>
+    <a class="na" href="#backend"><span class="nn">08</span>Backend 종류</a>
+    <a class="na" href="#composite"><span class="nn">09</span>CompositeBackend</a>
+  </div>
+  <div class="ng">
+    <div class="nl">SubAgent</div>
+    <a class="na" href="#subagent"><span class="nn">10</span>SubAgent 개념</a>
+    <a class="na" href="#async-sub"><span class="nn">11</span>비동기 SubAgent <span class="new-badge">NEW</span></a>
+    <a class="na" href="#parallel"><span class="nn">12</span>병렬 실행</a>
+  </div>
+  <div class="ng">
+    <div class="nl">운영</div>
+    <a class="na" href="#hitl"><span class="nn">13</span>Human-in-the-Loop</a>
+    <a class="na" href="#mcp"><span class="nn">14</span>MCP 연동</a>
+    <a class="na" href="#security"><span class="nn">15</span>보안</a>
+    <a class="na" href="#pattern"><span class="nn">16</span>실전 패턴</a>
+    <a class="na" href="#checklist"><span class="nn">✓</span>체크리스트</a>
+  </div>
+</nav>
+
+<!-- 메인 -->
+<main class="main">
+
+  <!-- 히어로 -->
+  <section class="sec" id="intro" style="border-bottom:2px solid var(--ink);margin-bottom:64px;padding-bottom:48px">
+    <div class="hero-eye">LangChain Deep Agents · Technical Guide</div>
+    <h1 class="" style="font-family:var(--serif);font-size:48px;font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:20px">Deep <span>Agents</span><br>기술 가이드</h1>
+    <p style="font-size:16px;line-height:1.8;color:var(--mid);max-width:600px;margin-bottom:24px">LangChain이 Claude Code에서 영감을 받아 만든 에이전트 하네스. LangGraph 런타임 위에 계획·파일시스템·서브에이전트·장기메모리를 내장하여 복잡한 다단계 작업을 처리합니다.</p>
+    <div class="meta-row">
+      <span class="meta-item"><strong>버전</strong>v0.5.0a1 (비동기 서브에이전트 프리뷰)</span>
+      <span class="meta-item"><strong>기반</strong>LangChain + LangGraph</span>
+      <span class="meta-item"><strong>라이선스</strong>MIT</span>
+      <span class="meta-item"><strong>설치</strong>pip install deepagents</span>
+    </div>
+  </section>
+
+  <!-- 01. 언제 쓰는가 -->
+  <div class="ph" id="when">
+    <div class="ph-line"><span class="ph-num">01</span><span class="ph-title">언제 쓰는가</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">Deep Agents vs LangGraph 직접 설계</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">핵심</span><span class="lb-title">Deep Agents는 LangGraph를 대체하지 않아요</span></div>
+      <div class="lb">
+        <p>Deep Agents는 LangGraph <strong>위에</strong> 구축된 하네스예요. 런타임은 여전히 LangGraph이고, Deep Agents는 반복적으로 구현해야 하는 패턴들(계획, 파일시스템, 서브에이전트, 요약)을 미리 내장해둔 것입니다.</p>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>상황</th><th>권장</th><th>이유</th></tr></thead>
+        <tbody>
+          <tr><td>질문 유형이 예측 가능한 파이프라인</td><td class="tb">LangGraph 직접 설계</td><td>흐름 제어가 명확해야 할 때</td></tr>
+          <tr><td>자유 질의 + 온톨로지/시맨틱 레이어</td><td class="tg">Deep Agents</td><td>LLM이 동적으로 판단해야 할 때</td></tr>
+          <tr><td>다단계 리서치·분석 작업</td><td class="tg">Deep Agents</td><td>계획·서브에이전트 내장 활용</td></tr>
+          <tr><td>단순 툴 호출 루프</td><td class="tb">LangChain create_agent</td><td>오버엔지니어링 방지</td></tr>
+          <tr><td>파이프라인 + 자유 판단 혼합</td><td class="tn">Deep Agents + 내부 LangGraph</td><td>계획/해석은 Deep Agent, 실행은 파이프라인</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 02. 아키텍처 -->
+  <div class="ph" id="arch">
+    <div class="ph-line"><span class="ph-num">02</span><span class="ph-title">전체 아키텍처</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">계층 구조</h2>
+    <div class="flow" style="flex-direction:column;align-items:flex-start">
+      <div class="flow">
+        <span class="fi" style="background:#f0ede8;border-color:var(--b2);font-weight:700;color:var(--ink)">사용자 요청</span>
+        <span class="fa">→</span>
+        <span class="fi mw">Deep Agent (create_deep_agent)</span>
+      </div>
+      <div style="padding-left:20px;color:var(--dim);font-size:12px;font-family:var(--mono);margin:2px 0">↓ Middleware Stack 처리</div>
+      <div class="flow">
+        <span class="fi mw">TodoList MW</span>
+        <span class="fi mw">Filesystem MW</span>
+        <span class="fi mw">SubAgent MW</span>
+        <span class="fi mw">Summarization MW</span>
+        <span class="fi mw">PromptCaching MW</span>
+      </div>
+      <div style="padding-left:20px;color:var(--dim);font-size:12px;font-family:var(--mono);margin:2px 0">↓ Backend 라우팅</div>
+      <div class="flow">
+        <span class="fi bd">StateBackend</span>
+        <span class="fi bd">FilesystemBackend</span>
+        <span class="fi bd">StoreBackend</span>
+        <span class="fi bd">CompositeBackend</span>
+      </div>
+      <div style="padding-left:20px;color:var(--dim);font-size:12px;font-family:var(--mono);margin:2px 0">↓ LangGraph 런타임 (스트리밍, 체크포인팅, HITL)</div>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>Claude Code에서 영감</strong> Deep Agents는 Claude Code가 단순 코딩을 넘어 범용으로 쓰이는 이유를 분석해서 만들었어요. Claude Code의 4가지 핵심 — 상세 시스템 프롬프트, no-op 플래닝 툴, 서브에이전트, 파일시스템 — 을 일반화한 것입니다.</div>
+    </div>
+  </section>
+
+  <!-- 03. API -->
+  <div class="ph" id="api">
+    <div class="ph-line"><span class="ph-num">03</span><span class="ph-title">create_deep_agent() API</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">함수 시그니처 및 파라미터</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">기본 사용법</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents <span class="kw">import</span> create_deep_agent
+<span class="kw">from</span> langchain.chat_models <span class="kw">import</span> init_chat_model
+
+<span class="cm"># 최소 구성 (기본값: Claude Sonnet 4.5)</span>
+agent = <span class="fn">create_deep_agent</span>()
+
+<span class="cm"># 커스텀 구성</span>
+agent = <span class="fn">create_deep_agent</span>(
+    model=<span class="fn">init_chat_model</span>(<span class="str">"claude-sonnet-4-6"</span>),
+    tools=[my_tool_a, my_tool_b],
+    system_prompt=<span class="str">"당신은 데이터 분석 전문가입니다."</span>,
+    backend=my_backend,
+    subagents=[researcher, coder],
+    checkpointer=checkpointer,   <span class="cm"># 대화 상태 영속화</span>
+    store=store,                 <span class="cm"># 스레드 간 영구 메모리</span>
+    interrupt_on={<span class="str">"write_file"</span>: <span class="kw">True</span>},
+    debug=<span class="kw">True</span>,
+    name=<span class="str">"DataAnalysisAgent"</span>,
+)
+
+<span class="cm"># create_deep_agent는 컴파일된 LangGraph 그래프를 반환</span>
+result = agent.<span class="fn">invoke</span>({
+    <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"질문"</span>}]
+})</pre>
+      </div>
+    </div>
+
+    <h3>핵심 파라미터</h3>
+    <div class="tw">
+      <table class="pt">
+        <thead><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr></thead>
+        <tbody>
+          <tr><td class="pk">model</td><td class="pt-type">str | BaseChatModel</td><td class="pt-def">claude-sonnet-4.5</td><td>LLM 모델. <code>"openai:gpt-4o"</code> 문자열 또는 인스턴스</td></tr>
+          <tr><td class="pk">tools</td><td class="pt-type">Sequence[...]</td><td class="pt-def">None</td><td>커스텀 도구 (내장 도구 외 추가)</td></tr>
+          <tr><td class="pk">system_prompt</td><td class="pt-type">str</td><td class="pt-def">None</td><td>에이전트 역할 정의. 내장 프롬프트 앞에 삽입</td></tr>
+          <tr><td class="pk">backend</td><td class="pt-type">BackendProtocol</td><td class="pt-def">StateBackend</td><td>파일 저장소 백엔드</td></tr>
+          <tr><td class="pk">subagents</td><td class="pt-type">list[SubAgent]</td><td class="pt-def">None</td><td>커스텀 서브에이전트 정의</td></tr>
+          <tr><td class="pk">memory</td><td class="pt-type">list[str]</td><td class="pt-def">None</td><td>항상 주입되는 AGENTS.md 경로 목록</td></tr>
+          <tr><td class="pk">skills</td><td class="pt-type">list[str]</td><td class="pt-def">None</td><td>관련성 있을 때만 로드되는 SKILL.md 경로</td></tr>
+          <tr><td class="pk">checkpointer</td><td class="pt-type">Checkpointer</td><td class="pt-def">None</td><td>대화 상태 영속화 (thread_id로 재개)</td></tr>
+          <tr><td class="pk">store</td><td class="pt-type">BaseStore</td><td class="pt-def">None</td><td>스레드 간 영구 메모리</td></tr>
+          <tr><td class="pk">interrupt_on</td><td class="pt-type">dict[str, bool]</td><td class="pt-def">None</td><td>HITL 승인 필요 도구 설정</td></tr>
+          <tr><td class="pk">debug</td><td class="pt-type">bool</td><td class="pt-def">False</td><td>디버그 모드 (단계별 실행)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>자동 주입되는 내장 도구</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>도구</th><th>출처 미들웨어</th><th>기능</th></tr></thead>
+        <tbody>
+          <tr><td><code>write_todos</code></td><td>TodoListMiddleware</td><td>작업 목록 관리 (no-op, 컨텍스트 엔지니어링용)</td></tr>
+          <tr><td><code>ls</code></td><td>FilesystemMiddleware</td><td>디렉토리 조회</td></tr>
+          <tr><td><code>read_file</code></td><td>FilesystemMiddleware</td><td>파일 읽기 (offset/limit 페이지네이션)</td></tr>
+          <tr><td><code>write_file</code></td><td>FilesystemMiddleware</td><td>새 파일 생성</td></tr>
+          <tr><td><code>edit_file</code></td><td>FilesystemMiddleware</td><td>기존 파일 편집 (문자열 치환)</td></tr>
+          <tr><td><code>glob</code></td><td>FilesystemMiddleware</td><td>패턴으로 파일 검색</td></tr>
+          <tr><td><code>grep</code></td><td>FilesystemMiddleware</td><td>파일 내용 검색</td></tr>
+          <tr><td><code>execute</code></td><td>FilesystemMiddleware</td><td>셸 명령 실행 (SandboxBackend 필요)</td></tr>
+          <tr><td><code>task</code></td><td>SubAgentMiddleware</td><td>서브에이전트 호출</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 04. 미들웨어 -->
+  <div class="ph" id="middleware">
+    <div class="ph-line"><span class="ph-num">04</span><span class="ph-title">미들웨어 스택</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">자동 적용 순서 (외부 → 내부)</h2>
+    <div class="mw-stack">
+      <div class="mw-item"><span class="mw-num" style="color:var(--pur)">8</span><span class="mw-name">HumanInTheLoopMiddleware</span><span class="mw-desc">interrupt_on 설정 시에만 활성화</span><span class="mw-tool">선택</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--mid)">7</span><span class="mw-name">User Middleware</span><span class="mw-desc">사용자 정의 미들웨어</span><span class="mw-tool">선택</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--mid)">6</span><span class="mw-name">PatchToolCallsMiddleware</span><span class="mw-desc">dangling tool call 자동 수리</span><span class="mw-tool">자동</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--grn)">5</span><span class="mw-name">AnthropicPromptCachingMiddleware</span><span class="mw-desc">시스템 프롬프트 자동 캐싱 → 비용 절감</span><span class="mw-tool">자동</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--acc)">4</span><span class="mw-name">SummarizationMiddleware</span><span class="mw-desc">컨텍스트 85% 도달 시 자동 요약</span><span class="mw-tool">자동</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--blue)">3</span><span class="mw-name">SubAgentMiddleware</span><span class="mw-desc">task 도구 + 서브에이전트 생성</span><span class="mw-tool">자동</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--blue)">2</span><span class="mw-name">FilesystemMiddleware</span><span class="mw-desc">파일시스템 도구 + 대용량 결과 자동 처리</span><span class="mw-tool">자동</span></div>
+      <div class="mw-item"><span class="mw-num" style="color:var(--blue)">1</span><span class="mw-name">TodoListMiddleware</span><span class="mw-desc">write_todos 도구 (no-op, 계획 수립용)</span><span class="mw-tool">자동</span></div>
+    </div>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>FilesystemMiddleware 대용량 처리</strong> 도구 결과가 80,000자(기본값) 초과 시 <code>/large_tool_results/{id}</code>에 자동 저장하고, 에이전트에는 처음 10줄 + 파일 참조만 전달해요. 에이전트가 <code>read_file</code>로 페이지네이션 읽기 가능.</div>
+    </div>
+  </section>
+
+  <!-- 05. 컨텍스트 -->
+  <div class="ph" id="context">
+    <div class="ph-line"><span class="ph-num">05</span><span class="ph-title">컨텍스트 타입</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">5가지 컨텍스트 레이어</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>타입</th><th>제어 방법</th><th>범위</th><th>특징</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Input context</strong></td><td>system_prompt, memory, skills</td><td>정적 / 매 실행</td><td>시작 시 주입</td></tr>
+          <tr><td><strong>Runtime context</strong></td><td>invoke 시 context 파라미터</td><td>실행당</td><td>서브에이전트에 자동 전파</td></tr>
+          <tr><td><strong>Context compression</strong></td><td>SummarizationMiddleware 자동</td><td>자동</td><td>한계 도달 시 자동 압축</td></tr>
+          <tr><td><strong>Context isolation</strong></td><td>SubAgent task 도구</td><td>서브에이전트별</td><td>메인 컨텍스트 오염 방지</td></tr>
+          <tr><td><strong>Long-term memory</strong></td><td>StoreBackend + /memories/ 경로</td><td>스레드 간 영구</td><td>대화 종료 후도 유지</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 06. Memory vs Skills -->
+  <div class="ph" id="memory-skills">
+    <div class="ph-line"><span class="ph-num">06</span><span class="ph-title">Memory vs Skills</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">중요한 구분 — 항상 vs 필요할 때</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">핵심</span><span class="lb-title">Memory는 항상, Skills는 관련성 있을 때만</span></div>
+      <div class="lb">
+        <p><strong>Memory</strong> — AGENTS.md 파일. 시스템 프롬프트에 <strong>항상</strong> 주입돼요. 온톨로지 구조 요약, 핵심 비즈니스 규칙, 사용자 선호 같은 것을 넣으세요. 최소화가 중요해요.</p>
+        <p><strong>Skills</strong> — SKILL.md 파일. 시작 시 frontmatter만 읽고, 관련 질문이 들어올 때만 전체 내용을 로드해요. NL2SQL 방법론, 수요 예측 절차 같은 도메인 지식을 넣으세요. 토큰 절약 효과가 커요.</p>
+      </div>
+    </div>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">Memory + Skills 설정 예시</span></div>
+      <div class="lb">
+<pre>agent = <span class="fn">create_deep_agent</span>(
+    model=<span class="str">"claude-sonnet-4-6"</span>,
+
+    <span class="cm"># Memory — 항상 주입, 최소한으로 유지</span>
+    memory=[
+        <span class="str">"/project/AGENTS.md"</span>,         <span class="cm"># 온톨로지 구조 요약</span>
+        <span class="str">"~/.deepagents/preferences.md"</span> <span class="cm"># 사용자 선호</span>
+    ],
+
+    <span class="cm"># Skills — 관련성 있을 때만 로드 (토큰 절감)</span>
+    skills=[
+        <span class="str">"/skills/nl2sql/"</span>,      <span class="cm"># SQL 관련 질문 시 로드</span>
+        <span class="str">"/skills/forecast/"</span>,    <span class="cm"># 예측 관련 질문 시 로드</span>
+        <span class="str">"/skills/shap/"</span>,        <span class="cm"># SHAP 해석 요청 시 로드</span>
+    ],
+
+    system_prompt=<span class="str">"""
+    당신은 스마트폰 수요 데이터 분석 전문가입니다.
+
+    ## 온톨로지 구조
+    - 제품: Brand → Series → Model
+    - 시장: Region → Country → Channel
+    - 시간: Year → Quarter → Week
+    """</span>
+)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07. 압축/요약 -->
+  <div class="ph" id="compression">
+    <div class="ph-line"><span class="ph-num">07</span><span class="ph-title">자동 컨텍스트 압축 및 요약</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">SummarizationMiddleware 동작</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">개념</span><span class="lb-title">왜 필요한가</span></div>
+      <div class="lb">
+        <p>온톨로지 기반 자유 질의는 대화가 길어질 수밖에 없어요. Oracle 쿼리 결과, 외부 데이터, 중간 분석 결과가 쌓이다 보면 컨텍스트 창이 넘쳐요.</p>
+        <p>SummarizationMiddleware는 이를 자동으로 관리해요. 개발자가 신경 쓸 필요가 없어요.</p>
+      </div>
+    </div>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">동작 방식</span><span class="lb-title">트리거 조건 및 커스텀 설정</span></div>
+      <div class="lb">
+<pre><span class="cm"># 기본 동작</span>
+<span class="cm"># 컨텍스트의 85% 도달 시 자동 요약</span>
+<span class="cm"># 최근 10% 유지, 나머지는 요약으로 압축</span>
+
+<span class="cm"># 커스텀 설정 (미들웨어 직접 지정)</span>
+<span class="kw">from</span> deepagents.middleware <span class="kw">import</span> SummarizationMiddleware
+
+agent = <span class="fn">create_deep_agent</span>(
+    model=model,
+    middleware=[
+        <span class="fn">SummarizationMiddleware</span>(
+            model=model,
+            trigger=(<span class="str">"fraction"</span>, <span class="ac">0.80</span>),  <span class="cm"># 80%에서 트리거</span>
+            keep=(<span class="str">"fraction"</span>, <span class="ac">0.15</span>),     <span class="cm"># 최근 15% 유지</span>
+        )
+    ]
+)</pre>
+      </div>
+    </div>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>FilesystemMiddleware와 시너지</strong> 대용량 쿼리 결과는 파일로 오프로드되고, SummarizationMiddleware가 오래된 대화를 압축해요. 두 메커니즘이 함께 동작해서 장시간 분석 세션도 안정적으로 유지돼요.</div>
+    </div>
+  </section>
+
+  <!-- 08. Backend -->
+  <div class="ph" id="backend">
+    <div class="ph-line"><span class="ph-num">08</span><span class="ph-title">Backend 시스템</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">4가지 Backend 비교</h2>
+    <div class="bd-cards">
+      <div class="bd-card">
+        <div class="bd-title" style="color:var(--blue)">StateBackend</div>
+        <div class="bd-desc">LangGraph 상태에 파일 저장. 대화 스레드 범위 내 임시 저장. 기본값.</div>
+        <div class="bd-tags"><span class="tag tag-b">임시</span><span class="tag tag-b">기본값</span><span class="tag tag-b">빠름</span></div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-title" style="color:var(--grn)">FilesystemBackend</div>
+        <div class="bd-desc">로컬 디스크에 직접 저장. 영구 보존. virtual_mode=True로 경로 격리.</div>
+        <div class="bd-tags"><span class="tag tag-g">영구</span><span class="tag tag-g">디스크</span><span class="tag tag-a">보안설정 필요</span></div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-title" style="color:var(--pur)">StoreBackend</div>
+        <div class="bd-desc">LangGraph Store에 저장. 스레드 간 공유. 장기 메모리에 적합.</div>
+        <div class="bd-tags"><span class="tag tag-p">영구</span><span class="tag tag-p">스레드 간 공유</span></div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-title" style="color:var(--acc)">CompositeBackend</div>
+        <div class="bd-desc">경로 접두사 기반으로 여러 Backend 조합. longest-prefix 매칭.</div>
+        <div class="bd-tags"><span class="tag tag-a">라우팅</span><span class="tag tag-a">조합</span><span class="tag tag-a">권장</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09. CompositeBackend -->
+  <div class="ph" id="composite">
+    <div class="ph-line"><span class="ph-num">09</span><span class="ph-title">CompositeBackend 설계</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">경로 기반 스토리지 분리</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">데이터 플랫폼용 CompositeBackend 예시</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents.backends <span class="kw">import</span> (
+    CompositeBackend, StateBackend,
+    StoreBackend, FilesystemBackend
+)
+
+backend = <span class="fn">CompositeBackend</span>(
+    default=StateBackend,   <span class="cm"># / 하위 기본 (임시 작업 파일)</span>
+    routes={
+        <span class="str">"/memories/"</span>: StoreBackend,    <span class="cm"># 온톨로지 지식 영구 저장</span>
+        <span class="str">"/analysis/"</span>: <span class="fn">FilesystemBackend</span>(
+            root_dir=<span class="str">"./analysis_workspace"</span>,
+            virtual_mode=<span class="kw">True</span>,       <span class="cm"># 경로 탈출 방지</span>
+            max_file_size_mb=<span class="ac">10</span>,
+        ),
+    }
+)
+
+<span class="cm"># 라우팅 동작</span>
+<span class="cm"># /notes.txt           → StateBackend (임시)</span>
+<span class="cm"># /memories/ontology.md → StoreBackend (영구, 스레드 간 공유)</span>
+<span class="cm"># /analysis/report.md  → FilesystemBackend (로컬 디스크)</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. SubAgent -->
+  <div class="ph" id="subagent">
+    <div class="ph-line"><span class="ph-num">10</span><span class="ph-title">SubAgent — 컨텍스트 격리</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">SubAgent가 해결하는 문제</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">개념</span><span class="lb-title">Context Quarantine</span></div>
+      <div class="lb">
+        <p>Oracle 쿼리, 외부 API 조회, 웹 검색 등 대용량 결과를 메인 에이전트가 직접 처리하면 컨텍스트가 폭발해요. SubAgent는 이 작업을 <strong>독립된 컨텍스트</strong>에서 처리하고 최종 결과만 메인에 반환해요.</p>
+        <p>격리되는 상태: <code>messages</code>, <code>todos</code>, <code>structured_response</code>. 파일(files)과 커스텀 상태는 공유돼요.</p>
+      </div>
+    </div>
+
+    <h3>두 가지 SubAgent 타입</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>타입</th><th>정의 방식</th><th>적합한 경우</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SubAgent (dict)</strong></td><td>딕셔너리로 정의</td><td>대부분의 경우</td></tr>
+          <tr><td><strong>CompiledSubAgent</strong></td><td>LangGraph 그래프 직접 전달</td><td>복잡한 내부 워크플로우가 필요한 경우</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">SubAgent 정의 및 사용</span></div>
+      <div class="lb">
+<pre><span class="cm"># dict 방식 SubAgent 정의</span>
+nl2sql_agent = {
+    <span class="str">"name"</span>: <span class="str">"nl2sql-agent"</span>,
+    <span class="str">"description"</span>: <span class="str">"Oracle DB 자연어 쿼리 처리. SQL 생성 및 실행 필요 시 사용"</span>,
+    <span class="str">"system_prompt"</span>: <span class="str">"""Oracle 19c SQL 전문가.
+    메타데이터 확인 → SQL 생성 → 검증 → 실행 순서 준수.
+    FETCH FIRST 사용, 전체 스캔 금지."""</span>,
+    <span class="str">"tools"</span>: [oracle_query_tool, metadata_lookup_tool],
+    <span class="str">"model"</span>: <span class="str">"claude-sonnet-4-6"</span>,  <span class="cm"># 선택적 모델 오버라이드</span>
+    <span class="str">"skills"</span>: [<span class="str">"/skills/nl2sql/"</span>],   <span class="cm"># 이 에이전트만의 Skills</span>
+}
+
+forecast_agent = {
+    <span class="str">"name"</span>: <span class="str">"forecast-agent"</span>,
+    <span class="str">"description"</span>: <span class="str">"수요 예측 분석. 시계열 예측 및 SHAP 해석 필요 시 사용"</span>,
+    <span class="str">"system_prompt"</span>: <span class="str">"Prophet/XGBoost 기반 수요 예측 전문가..."</span>,
+    <span class="str">"tools"</span>: [load_data_tool, run_model_tool, shap_tool],
+    <span class="str">"model"</span>: <span class="str">"anthropic/claude-haiku-4-5"</span>,  <span class="cm"># 저렴한 모델로 비용 절감</span>
+}
+
+agent = <span class="fn">create_deep_agent</span>(
+    model=<span class="str">"claude-sonnet-4-6"</span>,
+    subagents=[nl2sql_agent, forecast_agent],
+    system_prompt=<span class="str">"""데이터 분석 오케스트레이터.
+    SQL 조회 필요 → nl2sql-agent 위임
+    예측 분석 필요 → forecast-agent 위임
+    병렬 실행 가능한 경우 동시에 task 호출"""</span>
+)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. 비동기 SubAgent -->
+  <div class="ph" id="async-sub">
+    <div class="ph-line"><span class="ph-num">11</span><span class="ph-title">비동기 SubAgent <span class="new-badge">v0.5 NEW</span></span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">논블로킹 백그라운드 서브에이전트</h2>
+    <div class="layer new">
+      <div class="lh"><span class="lb-badge">NEW</span><span class="lb-title">v0.5 프리뷰 기능 — 프로덕션 미권장</span></div>
+      <div class="lb">
+        <p>기존 동기 SubAgent는 완료될 때까지 메인 에이전트를 블록했어요. 긴 분석 작업(수십 초~수 분)에서는 병목이 됐죠.</p>
+        <p>비동기 SubAgent는 <strong>즉시 task ID를 반환</strong>하고 백그라운드에서 실행돼요. 메인 에이전트는 계속 사용자와 대화하면서 나중에 결과를 확인할 수 있어요.</p>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>기능</th><th>동기 SubAgent</th><th>비동기 SubAgent</th></tr></thead>
+        <tbody>
+          <tr><td>실행 모델</td><td>완료까지 블록</td><td class="tg">즉시 반환, 백그라운드 실행</td></tr>
+          <tr><td>중간 업데이트</td><td class="tr">불가</td><td class="tg">update_async_task로 가능</td></tr>
+          <tr><td>취소</td><td class="tr">불가</td><td class="tg">cancel_async_task로 가능</td></tr>
+          <tr><td>상태</td><td>무상태</td><td class="tg">자체 스레드에 상태 유지</td></tr>
+          <tr><td>배포 요건</td><td>없음</td><td class="ty">LangSmith Deployments 필요</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">비동기 SubAgent 설정</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents <span class="kw">import</span> AsyncSubAgent, create_deep_agent
+
+async_subagents = [
+    <span class="fn">AsyncSubAgent</span>(
+        name=<span class="str">"deep-researcher"</span>,
+        description=<span class="str">"장시간 데이터 수집 및 분석. 비동기로 실행됨"</span>,
+        graph_id=<span class="str">"researcher"</span>,  <span class="cm"># langgraph.json에 등록된 그래프 ID</span>
+    ),
+]
+
+<span class="cm"># 비동기 제어 도구 (자동 주입)</span>
+<span class="cm"># start_async_task  — 백그라운드 작업 시작 → task ID 반환</span>
+<span class="cm"># check_async_task  — 상태 및 결과 확인</span>
+<span class="cm"># update_async_task — 실행 중인 작업에 새 지시 전송</span>
+<span class="cm"># cancel_async_task — 작업 취소</span>
+<span class="cm"># list_async_tasks  — 전체 작업 목록</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. 병렬 실행 -->
+  <div class="ph" id="parallel">
+    <div class="ph-line"><span class="ph-num">12</span><span class="ph-title">병렬 실행 패턴</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">LLM이 한 번에 여러 task 호출 → 자동 병렬</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">동작 원리</span><span class="lb-title">한 번의 LLM 응답에서 여러 task 호출</span></div>
+      <div class="lb">
+<pre><span class="cm"># "아이폰 vs 갤럭시 비교 분석해줘" 같은 질문에서
+# LLM이 자동으로 병렬 호출 생성</span>
+
+AIMessage(tool_calls=[
+    {<span class="str">"name"</span>: <span class="str">"task"</span>, <span class="str">"args"</span>: {
+        <span class="str">"description"</span>: <span class="str">"아이폰 16 시리즈 판매 데이터 조회"</span>,
+        <span class="str">"subagent_type"</span>: <span class="str">"nl2sql-agent"</span>
+    }},
+    {<span class="str">"name"</span>: <span class="str">"task"</span>, <span class="str">"args"</span>: {
+        <span class="str">"description"</span>: <span class="str">"갤럭시 S25 시리즈 판매 데이터 조회"</span>,
+        <span class="str">"subagent_type"</span>: <span class="str">"nl2sql-agent"</span>
+    }},
+    {<span class="str">"name"</span>: <span class="str">"task"</span>, <span class="str">"args"</span>: {
+        <span class="str">"description"</span>: <span class="str">"동기간 스마트폰 시장 외부 지표 수집"</span>,
+        <span class="str">"subagent_type"</span>: <span class="str">"general-purpose"</span>
+    }},
+])
+<span class="cm"># → 세 서브에이전트 병렬 실행
+# → 각각 독립된 컨텍스트에서 처리
+# → 완료 후 메인 에이전트에 결과 통합</span></pre>
+      </div>
+    </div>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>시스템 프롬프트에 명시하면 더 잘 활용해요</strong> "병렬 실행 가능한 경우 동시에 여러 task를 호출하세요"를 system_prompt에 넣어주면 LLM이 더 적극적으로 병렬화해요.</div>
+    </div>
+  </section>
+
+  <!-- 13. HITL -->
+  <div class="ph" id="hitl">
+    <div class="ph-line"><span class="ph-num">13</span><span class="ph-title">Human-in-the-Loop</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">민감한 작업 전 사람 승인</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">interrupt_on 설정</span></div>
+      <div class="lb">
+<pre>agent = <span class="fn">create_deep_agent</span>(
+    model=model,
+    checkpointer=checkpointer,  <span class="cm"># HITL에 checkpointer 필수</span>
+    interrupt_on={
+        <span class="str">"execute"</span>: <span class="kw">True</span>,        <span class="cm"># 셸 명령 실행 전 승인</span>
+        <span class="str">"write_file"</span>: <span class="kw">True</span>,    <span class="cm"># 파일 쓰기 전 승인</span>
+        <span class="str">"task"</span>: <span class="kw">False</span>,          <span class="cm"># 서브에이전트 자동 허용</span>
+    }
+)
+
+<span class="cm"># 스트리밍으로 인터럽트 감지</span>
+<span class="kw">for</span> event <span class="kw">in</span> agent.<span class="fn">stream</span>({<span class="str">"messages"</span>: [...]}, stream_mode=<span class="str">"updates"</span>):
+    <span class="kw">if</span> <span class="str">"interrupt"</span> <span class="kw">in</span> event:
+        approved = <span class="fn">get_user_approval</span>(event[<span class="str">"interrupt"</span>])
+        <span class="kw">if not</span> approved:
+            <span class="kw">break</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14. MCP -->
+  <div class="ph" id="mcp">
+    <div class="ph-line"><span class="ph-num">14</span><span class="ph-title">MCP 연동</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">MCP 서버를 툴로 연결</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">개념</span><span class="lb-title">langchain-mcp-adapters 사용</span></div>
+      <div class="lb">
+        <p>Deep Agents는 <code>langchain-mcp-adapters</code>로 MCP 서버를 툴로 연결해요. MCP 서버가 제공하는 툴들이 <code>tools</code> 파라미터에 추가돼요.</p>
+      </div>
+    </div>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">MCP 서버 연동 예시</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> langchain_mcp_adapters.client <span class="kw">import</span> MultiServerMCPClient
+<span class="kw">from</span> deepagents <span class="kw">import</span> create_deep_agent
+
+<span class="cm"># MCP 클라이언트 설정</span>
+<span class="kw">async with</span> <span class="fn">MultiServerMCPClient</span>({
+    <span class="str">"oracle"</span>: {
+        <span class="str">"command"</span>: <span class="str">"python"</span>,
+        <span class="str">"args"</span>: [<span class="str">"mcp_servers/oracle_server.py"</span>],
+    },
+    <span class="str">"metadata"</span>: {
+        <span class="str">"url"</span>: <span class="str">"http://openmetadata-mcp:8080/sse"</span>,
+        <span class="str">"transport"</span>: <span class="str">"sse"</span>,
+    },
+}) <span class="kw">as</span> client:
+    mcp_tools = <span class="kw">await</span> client.<span class="fn">get_tools</span>()
+
+    agent = <span class="fn">create_deep_agent</span>(
+        model=<span class="str">"claude-sonnet-4-6"</span>,
+        tools=mcp_tools,  <span class="cm"># MCP 툴 주입</span>
+        subagents=[nl2sql_agent],
+        backend=composite_backend,
+    )
+
+<span class="cm"># CLI에서 MCP 도구 사용 (deepagents 0.4+)</span>
+<span class="cm"># deepagent --mcp oracle_server.py --mcp metadata_server.py</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15. 보안 -->
+  <div class="ph" id="security">
+    <div class="ph-line"><span class="ph-num">15</span><span class="ph-title">보안 설정</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">방어 계층 및 모범 사례</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>계층</th><th>메커니즘</th><th>효과</th></tr></thead>
+        <tbody>
+          <tr><td>입력 검증</td><td><code>_validate_path()</code></td><td>.. 경로 탈출, Windows 절대경로 차단</td></tr>
+          <tr><td>파일시스템 격리</td><td><code>virtual_mode=True</code></td><td>root_dir 외부 접근 불가</td></tr>
+          <tr><td>심볼릭 링크</td><td><code>O_NOFOLLOW</code></td><td>symlink 따라가기 방지 (Linux/macOS)</td></tr>
+          <tr><td>명령 인젝션</td><td>Base64 인코딩</td><td>셸 인젝션 방지</td></tr>
+          <tr><td>파일 크기</td><td><code>max_file_size_mb</code></td><td>대용량 파일 grep 스킵</td></tr>
+          <tr><td>실행 승인</td><td><code>interrupt_on["execute"]</code></td><td>셸 명령 전 사람 확인</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <span class="ci">⚠</span>
+      <div class="cb"><strong>Windows 환경 주의</strong> Windows에서는 <code>O_NOFOLLOW</code>가 지원되지 않아 symlink를 따라가요. Windows 환경에서는 반드시 <code>virtual_mode=True</code>를 사용하세요.</div>
+    </div>
+  </section>
+
+  <!-- 16. 실전 패턴 -->
+  <div class="ph" id="pattern">
+    <div class="ph-line"><span class="ph-num">16</span><span class="ph-title">실전 패턴</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">온톨로지 기반 데이터 플랫폼 전체 구성</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">BIP-Pipeline 스타일 구성 예시</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents <span class="kw">import</span> create_deep_agent
+<span class="kw">from</span> deepagents.backends <span class="kw">import</span> CompositeBackend, StateBackend, StoreBackend, FilesystemBackend
+<span class="kw">from</span> langchain_aws <span class="kw">import</span> ChatBedrock
+<span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> MemorySaver
+<span class="kw">from</span> langgraph.store.memory <span class="kw">import</span> InMemoryStore
+
+<span class="cm"># 1. Bedrock 모델 설정</span>
+main_model = <span class="fn">ChatBedrock</span>(model_id=<span class="str">"anthropic.claude-sonnet-4-6..."</span>)
+sub_model  = <span class="fn">ChatBedrock</span>(model_id=<span class="str">"anthropic.claude-haiku-4-5..."</span>)
+
+<span class="cm"># 2. CompositeBackend 구성</span>
+backend = <span class="fn">CompositeBackend</span>(
+    default=StateBackend,
+    routes={
+        <span class="str">"/memories/"</span>: StoreBackend,        <span class="cm"># 온톨로지 지식 영구 저장</span>
+        <span class="str">"/analysis/"</span>: <span class="fn">FilesystemBackend</span>(
+            root_dir=<span class="str">"./workspace"</span>, virtual_mode=<span class="kw">True</span>
+        ),
+    }
+)
+
+<span class="cm"># 3. SubAgent 정의</span>
+nl2sql_subagent = {
+    <span class="str">"name"</span>: <span class="str">"nl2sql"</span>,
+    <span class="str">"description"</span>: <span class="str">"자연어 → SQL 변환 및 Oracle 실행"</span>,
+    <span class="str">"system_prompt"</span>: <span class="str">"Oracle 19c SQL 전문가..."</span>,
+    <span class="str">"tools"</span>: [oracle_mcp_tool, metadata_mcp_tool],
+    <span class="str">"model"</span>: sub_model,
+    <span class="str">"skills"</span>: [<span class="str">"/skills/nl2sql/"</span>],
+}
+
+forecast_subagent = {
+    <span class="str">"name"</span>: <span class="str">"forecast"</span>,
+    <span class="str">"description"</span>: <span class="str">"수요 예측 모델 실행 및 SHAP 해석"</span>,
+    <span class="str">"system_prompt"</span>: <span class="str">"Prophet/XGBoost 수요 예측 전문가..."</span>,
+    <span class="str">"tools"</span>: [data_load_tool, model_run_tool, mlflow_tool],
+    <span class="str">"model"</span>: sub_model,
+    <span class="str">"skills"</span>: [<span class="str">"/skills/forecast/"</span>, <span class="str">"/skills/shap/"</span>],
+}
+
+<span class="cm"># 4. 메인 에이전트 구성</span>
+agent = <span class="fn">create_deep_agent</span>(
+    model=main_model,
+    subagents=[nl2sql_subagent, forecast_subagent],
+    backend=backend,
+    memory=[<span class="str">"/project/AGENTS.md"</span>],
+    skills=[<span class="str">"/skills/domain-knowledge/"</span>],
+    checkpointer=<span class="fn">MemorySaver</span>(),
+    store=<span class="fn">InMemoryStore</span>(),
+    interrupt_on={<span class="str">"execute"</span>: <span class="kw">True</span>},
+    system_prompt=<span class="str">"""스마트폰 수요 데이터 분석 전문가.
+
+## 온톨로지 구조
+- 제품: Brand → Series → Model
+- 시장: Region → Country → Channel
+
+## 위임 전략
+- SQL 조회 필요 → nl2sql 서브에이전트
+- 예측/SHAP 필요 → forecast 서브에이전트
+- 독립적 작업은 병렬로 동시 task 호출
+- 온톨로지 개념 확인 필요 → /memories/ 파일 참조
+"""</span>,
+)
+
+<span class="cm"># 5. 실행 (thread_id로 대화 연속성 유지)</span>
+config = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user_session_001"</span>}}
+result = agent.<span class="fn">invoke</span>(
+    {<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"지난 분기 아이폰 vs 갤럭시 판매 비교해줘"</span>}]},
+    config=config
+)</pre>
+      </div>
+    </div>
+
+    <h3>장기 메모리 구성 (대화 간 지식 유지)</h3>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">스레드 간 메모리 설정</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> langgraph.checkpoint.postgres <span class="kw">import</span> PostgresSaver
+<span class="kw">from</span> langgraph.store.postgres <span class="kw">import</span> PostgresStore
+
+<span class="cm"># 프로덕션용 영구 저장소</span>
+checkpointer = <span class="fn">PostgresSaver</span>.<span class="fn">from_conn_string</span>(<span class="str">"postgresql://..."</span>)
+store = <span class="fn">PostgresStore</span>.<span class="fn">from_conn_string</span>(<span class="str">"postgresql://..."</span>)
+
+agent = <span class="fn">create_deep_agent</span>(
+    model=model,
+    checkpointer=checkpointer,
+    store=store,
+    backend=<span class="fn">CompositeBackend</span>(
+        default=StateBackend,
+        routes={<span class="str">"/memories/"</span>: StoreBackend}
+    ),
+    system_prompt=<span class="str">"""중요한 발견은 /memories/ 에 저장해줘.
+    예: /memories/ontology-updates.md, /memories/model-decisions.md"""</span>
+)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 체크리스트 -->
+  <div class="ph" id="checklist">
+    <div class="ph-line"><span class="ph-num">✓</span><span class="ph-title">구현 체크리스트</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <div class="clpart">
+    <div class="cltitle">기본 설정</div>
+    <ul class="cl">
+      <li><span class="chk"></span><code>pip install deepagents</code> 설치</li>
+      <li><span class="chk"></span>system_prompt에 에이전트 역할 및 온톨로지 구조 정의</li>
+      <li><span class="chk"></span>Memory에 핵심 규칙 (최소화), Skills에 도메인 지식 분리</li>
+      <li><span class="chk"></span>CompositeBackend로 임시/영구/로컬 스토리지 분리</li>
+    </ul>
+  </div>
+
+  <div class="clpart">
+    <div class="cltitle">SubAgent 설계</div>
+    <ul class="cl">
+      <li><span class="chk"></span>SubAgent별 역할을 명확히 분리 (name, description 구체적으로)</li>
+      <li><span class="chk"></span>각 SubAgent에 최소한의 툴만 할당</li>
+      <li><span class="chk"></span>비용 최적화: 오케스트레이터 Sonnet, 서브에이전트 Haiku</li>
+      <li><span class="chk"></span>병렬 실행 권장 내용을 system_prompt에 명시</li>
+    </ul>
+  </div>
+
+  <div class="clpart">
+    <div class="cltitle">컨텍스트 관리</div>
+    <ul class="cl">
+      <li><span class="chk"></span>Memory 파일 최소화 (항상 주입되므로)</li>
+      <li><span class="chk"></span>Skills는 단일 도메인에 집중해서 작성</li>
+      <li><span class="chk"></span>대용량 결과는 파일로 오프로드 (자동 동작 확인)</li>
+      <li><span class="chk"></span>SummarizationMiddleware 트리거 값 조정 (필요시)</li>
+    </ul>
+  </div>
+
+  <div class="clpart">
+    <div class="cltitle">보안 및 운영</div>
+    <ul class="cl">
+      <li><span class="chk"></span>FilesystemBackend에 <code>virtual_mode=True</code> 설정</li>
+      <li><span class="chk"></span>execute 도구에 <code>interrupt_on</code> 필수 설정</li>
+      <li><span class="chk"></span>LangSmith 트레이싱 활성화 (LANGSMITH_TRACING=true)</li>
+      <li><span class="chk"></span>checkpointer 설정으로 대화 연속성 확보</li>
+      <li><span class="chk"></span>Bedrock 환경: langchain-aws 사용, Agent Skills API 대신 Skills 파일 사용</li>
+    </ul>
+  </div>
+
+</main>
+</div>
+
+<footer>
+  <p>deepagents.guide · v0.5 기준 · 2026.04</p>
+  <p>LangChain · LangGraph · MIT License</p>
+</footer>
+
+<script>
+const secs = document.querySelectorAll('.sec,.ph');
+const nas = document.querySelectorAll('.na');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      nas.forEach(n => n.classList.remove('active'));
+      const id = e.target.id;
+      const a = document.querySelector(`.na[href="#${id}"]`);
+      if (a) a.classList.add('active');
+    }
+  });
+}, {rootMargin:'-15% 0px -75% 0px'});
+secs.forEach(s => { if (s.id) obs.observe(s); });
+nas.forEach(n => {
+  n.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(n.getAttribute('href'));
+    if (t) t.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>
