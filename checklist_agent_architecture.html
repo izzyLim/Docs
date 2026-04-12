@@ -57,7 +57,7 @@
 <body>
 
 <h1>BIP 체크리스트 모니터링 에이전트</h1>
-<p class="subtitle">Version 5.4 | Haiku + MCP ReAct 에이전트 | Phase 5 (LLM 직접 호출)</p>
+<p class="subtitle">Version 6.2 | Haiku + MCP ReAct 에이전트 | Phase 6 (가독성 개선 + 실시간 강화)</p>
 
 <div class="grid-4">
   <div class="card metric-box"><div class="num">44</div><div class="label">MCP 도구</div></div>
@@ -349,12 +349,16 @@ graph LR
     P5_1 --> P5_2["5-2<br/>프롬프트 간소화"]
     P5_2 --> P5_3["5-3<br/>시간대별 분리"]
     P5_3 --> P5_4["5-4<br/>Sonnet 전환<br/>체크리스트 그룹핑"]
+    P5_4 --> P6["Phase 6<br/>4/11<br/>가독성 전면 개선"]
+    P6 --> P6_1["6-1<br/>preopen API 교체"]
+    P6_1 --> P6_2["6-2<br/>실시간 스냅샷 강화"]
 
     style P2 fill:#fee2e2,stroke:#dc2626
     style P5 fill:#d1fae5,stroke:#059669
-    style P5_4 fill:#d1fae5,stroke:#059669
+    style P6 fill:#dbeafe,stroke:#2563eb
+    style P6_2 fill:#dbeafe,stroke:#2563eb
 </div>
-<p class="diagram-label">Phase 2(4단계 파이프라인)에서 Phase 5(LLM 직접 호출)로 전환</p>
+<p class="diagram-label">Phase 5(LLM 직접 호출) → Phase 6(가독성 전면 개선 + 실시간 데이터 강화)</p>
 
 <div class="card">
   <h3>주요 결정 로그</h3>
@@ -388,6 +392,26 @@ graph LR
       <div class="time">2026-04-07 — 중복 발송 방지</div>
       <div class="desc">모든 알림 DAG retries: 0 적용</div>
       <div class="detail">preopen 메시지 2번 발송되던 문제 해결</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">2026-04-11 — Phase 6: 체크리스트 알림 가독성 전면 개선</div>
+      <div class="desc">40+줄 → 15~20줄 하이브리드 포맷 (체크 결과 + 📈📉 움직임 + 👀 관찰 포인트)</div>
+      <div class="detail">방향성 규칙(USD/KRW·유가·VIX = higher_is_risk) 프롬프트 명시, 동일 indicator 항목 병합, 첫 리포트 09:00→09:30, 에이전트 타임아웃 180초</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">2026-04-11 — preopen 예상 체결가 API 교체</div>
+      <div class="desc">FHKST01010100 (간헐적 0) → FHKST01010200 output2/antc_cnpr (안정적)</div>
+      <div class="detail">_is_preopen_window() 시간 가드(평일 08:30~09:00 KST)로 장 외 stale 데이터 차단</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">2026-04-11 — 실시간 스냅샷 에이전트 전달 + 도구 로깅</div>
+      <div class="desc">에이전트 도구 미호출 시 어제 데이터 사용 방지 → 스냅샷 텍스트 주입</div>
+      <div class="detail">ALWAYS_COLLECT_STOCKS 10종목 강제 조회, resolve_stock_code() 자동 매칭, tool_call_details/summary 로깅</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">2026-04-11 — 모닝리포트 개선 + 테스트 DAG 텔레그램 차단</div>
+      <div class="desc">신호등 fallback(⚪방지), 날짜 라벨(MM/DD), 투자자 동향 콤마, 중복 제목 제거</div>
+      <div class="detail">build_morning_report(send_telegram=False)로 테스트 DAG의 운영 채널 오염 방지</div>
     </div>
   </div>
 </div>
@@ -454,7 +478,7 @@ graph TD
 </div>
 
 <div class="updated">
-  마지막 업데이트: 2026-04-12 | Phase 5.4
+  마지막 업데이트: 2026-04-13 | Phase 6.2
 </div>
 
 </body>
