@@ -247,7 +247,8 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
     <a class="na" href="#hitl"><span class="nn">13</span>Human-in-the-Loop</a>
     <a class="na" href="#mcp"><span class="nn">14</span>MCP 연동</a>
     <a class="na" href="#security"><span class="nn">15</span>보안</a>
-    <a class="na" href="#pattern"><span class="nn">16</span>실전 패턴</a>
+    <a class="na" href="#docker"><span class="nn">16</span>Docker 배포</a>
+    <a class="na" href="#pattern"><span class="nn">17</span>실전 패턴</a>
     <a class="na" href="#checklist"><span class="nn">✓</span>체크리스트</a>
   </div>
 </nav>
@@ -480,6 +481,138 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
           <tr><td>파이프라인 + 자유 판단 혼합</td><td class="tn">Deep Agents + 내부 LangGraph</td><td>계획/해석은 Deep Agent, 실행은 파이프라인</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h2 class="sec-title" style="margin-top:32px">실질적 차이 — 6가지 기준</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>기준</th><th>LangGraph 직접 설계</th><th>Deep Agents</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>실행 흐름</strong></td>
+            <td class="tg">코드에 고정 (결정론적)</td>
+            <td class="ty">LLM이 동적으로 결정</td>
+          </tr>
+          <tr>
+            <td><strong>새 에이전트 추가</strong></td>
+            <td class="tr">그래프 노드·엣지 수정 필요</td>
+            <td class="tg">subagents 목록에 추가만</td>
+          </tr>
+          <tr>
+            <td><strong>병렬 실행</strong></td>
+            <td class="ty">명시적으로 직접 구현</td>
+            <td class="tg">LLM이 자동으로 병렬 task 호출</td>
+          </tr>
+          <tr>
+            <td><strong>컨텍스트 관리</strong></td>
+            <td class="ty">State 직접 설계</td>
+            <td class="tg">SummarizationMiddleware 자동</td>
+          </tr>
+          <tr>
+            <td><strong>예측 가능성</strong></td>
+            <td class="tg">높음 — 항상 같은 흐름</td>
+            <td class="tr">낮음 — LLM 판단에 따라 다름</td>
+          </tr>
+          <tr>
+            <td><strong>디버깅</strong></td>
+            <td class="tg">쉬움 — 흐름 추적 명확</td>
+            <td class="tr">어려움 — LLM이 왜 그렇게 했는지?</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="layer warn">
+      <div class="lh"><span class="lb-badge">⚠ 주의</span><span class="lb-title">결정론적 파이프라인에 Deep Agents를 쓰면 위험한 이유</span></div>
+      <div class="lb">
+        <p>TradingAgents처럼 <strong>실행 순서가 중요한 시스템</strong>에서 Deep Agents를 쓰면 LLM이 스스로 판단해서 단계를 건너뛸 수 있어요.</p>
+        <p>예를 들어 LLM이 "오늘은 리스크 팀 검토 생략해도 될 것 같은데?"라고 판단하거나, 토론 없이 바로 트레이더로 넘어가는 식이에요. 금융 시스템처럼 특정 단계가 반드시 실행되어야 하는 경우에는 이런 비결정성이 치명적이에요.</p>
+        <p>→ <strong>순서가 중요한 파이프라인 = LangGraph, 자유로운 탐색/분석 = Deep Agents</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2 class="sec-title">혼합 패턴 — Deep Agents + LangGraph 조합</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">패턴</span><span class="lb-title">상위는 Deep Agents, 내부 실행은 LangGraph</span></div>
+      <div class="lb">
+        <p>두 가지를 따로 쓰는 게 아니라 <strong>조합</strong>하면 각각의 장점을 모두 취할 수 있어요.</p>
+        <p>Deep Agents가 "어떤 분석이 필요한지, 어떤 순서로 접근할지" 상위 레벨을 판단하고, 실제 결정론적 실행은 LangGraph 파이프라인 서브에이전트에 위임하는 패턴이에요.</p>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">CompiledSubAgent로 LangGraph 그래프를 서브에이전트로 등록</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents <span class="kw">import</span> create_deep_agent, CompiledSubAgent
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+
+<span class="cm"># ① LangGraph로 결정론적 파이프라인 구성</span>
+<span class="cm">#    (Analyst → Researcher → Trader → Risk → FundManager 고정 흐름)</span>
+trading_pipeline = <span class="fn">create_agent</span>(
+    model=model,
+    tools=trading_tools,
+    prompt=<span class="str">"트레이딩 분석 파이프라인. 반드시 전체 단계를 순서대로 실행."</span>
+)
+
+<span class="cm"># ② LangGraph 그래프를 CompiledSubAgent로 래핑</span>
+trading_subagent = <span class="fn">CompiledSubAgent</span>(
+    name=<span class="str">"trading-pipeline"</span>,
+    description=<span class="str">"종목 심층 분석. 펀더멘털→리서처→트레이더→리스크 전체 파이프라인 실행"</span>,
+    runnable=trading_pipeline   <span class="cm"># ← 컴파일된 LangGraph 그래프</span>
+)
+
+<span class="cm"># ③ Deep Agents가 상위 오케스트레이터로 동작</span>
+orchestrator = <span class="fn">create_deep_agent</span>(
+    model=<span class="str">"claude-sonnet-4-6"</span>,
+    subagents=[trading_subagent],
+    system_prompt=<span class="str">"""당신은 포트폴리오 분석 조율자예요.
+
+    사용자의 요청을 분석해서:
+    - 심층 종목 분석이 필요하면 → trading-pipeline 서브에이전트 호출
+    - 여러 종목 비교가 필요하면 → 병렬로 여러 task 동시 호출
+    - 시장 개요 질문이면 → 직접 답변
+
+    서브에이전트의 실행 순서는 건드리지 마세요. 내부 파이프라인이 알아서 처리해요.
+    """</span>,
+    backend=backend,
+)
+
+<span class="cm"># 사용: 자유로운 자연어 요청 → 오케스트레이터가 판단 → 파이프라인 실행</span>
+result = orchestrator.<span class="fn">invoke</span>({
+    <span class="str">"messages"</span>: [{
+        <span class="str">"role"</span>: <span class="str">"user"</span>,
+        <span class="str">"content"</span>: <span class="str">"NVDA랑 AAPL 비교 분석해줘. 어디에 투자하는 게 나을지"</span>
+    }]
+})
+<span class="cm"># → 오케스트레이터가 두 종목을 병렬로 trading-pipeline에 위임
+# → 각 파이프라인은 결정론적으로 전체 단계 실행
+# → 결과를 받아 비교 분석 종합</span></pre>
+      </div>
+    </div>
+
+    <div class="tw" style="margin-top:16px">
+      <table>
+        <thead><tr><th>레이어</th><th>담당</th><th>특징</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Deep Agents (상위)</strong></td>
+            <td>어떤 분석이 필요한지 판단, 병렬 호출 여부 결정, 결과 종합</td>
+            <td class="tg">자유로운 자연어 요청 처리</td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph (내부)</strong></td>
+            <td>결정론적 파이프라인 실행, 단계 보장</td>
+            <td class="tg">순서·안전성 보장</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>BIP-Pipeline에 적용한다면</strong> NL2SQL + 수요예측 파이프라인은 LangGraph로 결정론적으로 구성하고, "아이폰 vs 갤럭시 비교 분석해줘" 같은 자유로운 분석 요청은 Deep Agents 오케스트레이터가 받아서 필요한 파이프라인들을 병렬로 호출하는 패턴이 자연스러워요.</div>
     </div>
   </section>
 
@@ -1057,9 +1190,200 @@ AIMessage(tool_calls=[
     </div>
   </section>
 
-  <!-- 16. 실전 패턴 -->
+  <!-- 16. Docker 배포 -->
+  <div class="ph" id="docker">
+    <div class="ph-line"><span class="ph-num">16</span><span class="ph-title">Docker 배포</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">기본 구성 — 일반 Python 앱과 동일</h2>
+    <div class="layer concept">
+      <div class="lh"><span class="lb-badge">핵심</span><span class="lb-title">Deep Agents는 pip 패키지 — Docker 구성이 단순해요</span></div>
+      <div class="lb">
+        <p>Deep Agents는 <code>pip install deepagents</code>로 설치되는 일반 Python 패키지예요. 별도 런타임이나 특수 환경이 필요 없어서 Docker 구성이 일반 FastAPI/Python 앱과 거의 동일해요.</p>
+        <p>단 하나 중요한 주의점: <strong><code>/memories/</code>, <code>/workspace/</code> 경로는 반드시 볼륨으로 마운트</strong>해야 해요. 안 하면 컨테이너 재시작 시 장기 메모리가 전부 날아가요.</p>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">DOCKERFILE</span><span class="lb-title">기본 구성</span></div>
+      <div class="lb">
+<pre><span class="cm"># Dockerfile</span>
+<span class="kw">FROM</span> python:3.13-slim
+
+<span class="kw">WORKDIR</span> /app
+
+<span class="kw">COPY</span> requirements.txt .
+<span class="kw">RUN</span> pip install deepagents langchain-aws
+
+<span class="kw">COPY</span> . .
+
+<span class="cm"># 볼륨 마운트 포인트 명시</span>
+<span class="kw">VOLUME</span> ["/app/workspace", "/app/memories"]
+
+<span class="kw">CMD</span> ["python", "main.py"]</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">YAML</span><span class="lb-title">docker-compose.yml 기본</span></div>
+      <div class="lb">
+<pre>services:
+  deep-agent:
+    build: .
+    env_file: .env              <span class="cm"># API 키 / AWS 자격증명 관리</span>
+    volumes:
+      - ./workspace:/app/workspace   <span class="cm"># FilesystemBackend 로컬 마운트</span>
+      - ./memories:/app/memories     <span class="cm"># 장기 메모리 영속화 ← 필수!</span>
+    ports:
+      - "8000:8000"             <span class="cm"># FastAPI 등 API 서버로 서빙할 경우</span></pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">컨테이너 내부 Backend 경로 설정</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> deepagents.backends <span class="kw">import</span> CompositeBackend, StateBackend, FilesystemBackend
+
+backend = <span class="fn">CompositeBackend</span>(
+    default=StateBackend,
+    routes={
+        <span class="cm"># 컨테이너 내부 경로 → 볼륨으로 호스트와 연결</span>
+        <span class="str">"/memories/"</span>: <span class="fn">FilesystemBackend</span>(
+            root_dir=<span class="str">"/app/memories"</span>,   <span class="cm"># ← 볼륨 마운트 경로와 일치</span>
+            virtual_mode=<span class="kw">True</span>
+        ),
+        <span class="str">"/workspace/"</span>: <span class="fn">FilesystemBackend</span>(
+            root_dir=<span class="str">"/app/workspace"</span>,  <span class="cm"># ← 볼륨 마운트 경로와 일치</span>
+            virtual_mode=<span class="kw">True</span>
+        ),
+    }
+)</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2 class="sec-title">Bedrock 환경 (air-gapped / 사내망)</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">YAML</span><span class="lb-title">Bedrock 자격증명 주입</span></div>
+      <div class="lb">
+<pre>services:
+  deep-agent:
+    build: .
+    environment:
+      - AWS_DEFAULT_REGION=ap-northeast-2
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./workspace:/app/workspace
+      - ./memories:/app/memories</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">Bedrock 모델 설정</span></div>
+      <div class="lb">
+<pre><span class="kw">from</span> langchain_aws <span class="kw">import</span> ChatBedrock
+<span class="kw">from</span> deepagents <span class="kw">import</span> create_deep_agent
+
+model = <span class="fn">ChatBedrock</span>(
+    model_id=<span class="str">"anthropic.claude-sonnet-4-6-..."</span>,
+    region_name=<span class="str">"ap-northeast-2"</span>
+)
+
+agent = <span class="fn">create_deep_agent</span>(
+    model=model,
+    backend=backend,
+    system_prompt=<span class="str">"..."</span>,
+)</pre>
+      </div>
+    </div>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>air-gapped 환경 완전 구성</strong> Bedrock + Ollama 조합이면 외부 인터넷 없이 완전 내부망에서 동작하는 Deep Agents 컨테이너를 만들 수 있어요. Bedrock은 VPC 엔드포인트로, Ollama는 내부 GPU 서버에 배포해서 연결하면 돼요.</div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2 class="sec-title">Ollama 로컬 모델 프로파일 구성</h2>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">YAML</span><span class="lb-title">Ollama 프로파일 포함 전체 구성</span></div>
+      <div class="lb">
+<pre>services:
+  <span class="cm"># 기본 실행 (외부 API)</span>
+  deep-agent:
+    build: .
+    env_file: .env
+    volumes:
+      - ./workspace:/app/workspace
+      - ./memories:/app/memories
+
+  <span class="cm"># Ollama 로컬 모델 사용 시</span>
+  deep-agent-ollama:
+    build: .
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./workspace:/app/workspace
+      - ./memories:/app/memories
+    depends_on:
+      - ollama
+
+  <span class="cm"># Ollama 서버</span>
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+volumes:
+  ollama_data:</pre>
+      </div>
+    </div>
+
+    <h3>실행 방법</h3>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">BASH</span><span class="lb-title">프로파일별 실행</span></div>
+      <div class="lb">
+<pre><span class="cm"># 기본 실행 (외부 LLM API)</span>
+docker compose run --rm deep-agent
+
+<span class="cm"># Ollama 로컬 모델로 실행</span>
+docker compose --profile ollama run --rm deep-agent-ollama
+
+<span class="cm"># LangSmith 트레이싱 추가 (환경변수만 추가)</span>
+LANGSMITH_TRACING=true \
+LANGSMITH_API_KEY=your-key \
+docker compose run --rm deep-agent</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2 class="sec-title">구성 정리</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>항목</th><th>내용</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Docker 가능 여부</strong></td><td class="tg">✅ 일반 Python 앱과 동일</td><td>별도 런타임 불필요</td></tr>
+          <tr><td><strong>/memories/ 볼륨</strong></td><td class="ty">⚠️ 필수</td><td>없으면 재시작 시 장기 메모리 소실</td></tr>
+          <tr><td><strong>/workspace/ 볼륨</strong></td><td class="ty">⚠️ 권장</td><td>분석 작업 파일 영속화</td></tr>
+          <tr><td><strong>Bedrock 연동</strong></td><td class="tg">✅ 환경변수 주입</td><td>AWS 자격증명 env로 전달</td></tr>
+          <tr><td><strong>Ollama 로컬 모델</strong></td><td class="tg">✅ 별도 컨테이너</td><td>API 비용 없음, RAM 8GB+ 필요</td></tr>
+          <tr><td><strong>LangSmith 연동</strong></td><td class="tg">✅ 환경변수만</td><td>LANGSMITH_API_KEY 추가</td></tr>
+          <tr><td><strong>virtual_mode</strong></td><td class="ty">필수 설정</td><td>컨테이너 탈출 방지</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 17. 실전 패턴 -->
   <div class="ph" id="pattern">
-    <div class="ph-line"><span class="ph-num">16</span><span class="ph-title">실전 패턴</span></div>
+    <div class="ph-line"><span class="ph-num">17</span><span class="ph-title">실전 패턴</span></div>
     <div class="ph-div"></div>
   </div>
 
@@ -1211,6 +1535,18 @@ agent = <span class="fn">create_deep_agent</span>(
       <li><span class="chk"></span>LangSmith 트레이싱 활성화 (LANGSMITH_TRACING=true)</li>
       <li><span class="chk"></span>checkpointer 설정으로 대화 연속성 확보</li>
       <li><span class="chk"></span>Bedrock 환경: langchain-aws 사용, Agent Skills API 대신 Skills 파일 사용</li>
+    </ul>
+  </div>
+
+  <div class="clpart">
+    <div class="cltitle">Docker 배포</div>
+    <ul class="cl">
+      <li><span class="chk"></span><code>/memories/</code> 볼륨 마운트 필수 — 없으면 재시작 시 장기 메모리 소실</li>
+      <li><span class="chk"></span><code>/workspace/</code> 볼륨 마운트 권장 — 분석 파일 영속화</li>
+      <li><span class="chk"></span>Backend <code>root_dir</code> 경로를 볼륨 마운트 경로와 일치시키기</li>
+      <li><span class="chk"></span>FilesystemBackend에 <code>virtual_mode=True</code> 필수 — 컨테이너 탈출 방지</li>
+      <li><span class="chk"></span>Bedrock: AWS 자격증명을 환경변수로 주입 (하드코딩 금지)</li>
+      <li><span class="chk"></span>air-gapped 환경: Bedrock + Ollama 조합으로 완전 내부망 구성</li>
     </ul>
   </div>
 
