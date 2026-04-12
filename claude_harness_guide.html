@@ -704,6 +704,238 @@ footer p { font-size: 12px; color: var(--ink-light); font-family: var(--mono); }
 <pre>.claude/session-backend.md 파일을 읽고 그 역할로 동작해줘.</pre>
       </div>
     </div>
+
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">여러 레포/폴더에 접근 권한 주기</span></div>
+      <div class="layer-body">
+        <p style="margin-bottom:12px">Claude Code는 기본적으로 실행한 디렉토리만 알아요. 모든 세션이 여러 레포에 접근해야 한다면 <code>additionalDirectories</code>로 접근 권한을 부여해요. <strong>어디에 설정하느냐에 따라 적용 범위가 달라집니다.</strong></p>
+
+        <h3>설정 위치 3가지</h3>
+<pre><span class="cm">// ① 전역 — 모든 세션, 모든 프로젝트에 항상 적용</span>
+<span class="cm">// ~/.claude/settings.json</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [
+      <span class="str">"../bip-frontend"</span>,
+      <span class="str">"../bip-shared"</span>,
+      <span class="str">"../bip-pipeline"</span>
+    ]
+  }
+}
+
+<span class="cm">// ② 프로젝트 — 팀 공유 (git 커밋)</span>
+<span class="cm">// .claude/settings.json</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"../bip-shared"</span>]
+  }
+}
+
+<span class="cm">// ③ 로컬 — 개인 경로 (git 제외, .gitignore 등록)</span>
+<span class="cm">// .claude/settings.local.json</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"/Users/yeji/workspace/bip-docs"</span>]
+  }
+}</pre>
+
+        <h3>세션 중 임시 추가 — /add-dir</h3>
+<pre><span class="cm"># 실행 중인 세션에 즉시 추가 (권한도 함께 부여)</span>
+/add-dir ../bip-frontend
+
+<span class="cm"># 또는 시작 시 플래그로</span>
+claude --add-dir ../bip-frontend --add-dir ../bip-shared</pre>
+
+        <h3>각 레포의 CLAUDE.md도 함께 로드하려면</h3>
+<pre><span class="cm">// settings.json에 env 추가 (v2.1.20+)</span>
+{
+  <span class="str">"env"</span>: {
+    <span class="str">"CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"</span>: <span class="str">"1"</span>
+  },
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"../bip-frontend"</span>, <span class="str">"../bip-shared"</span>]
+  }
+}</pre>
+
+        <h3>멀티 레포 워크스페이스 구조</h3>
+<pre>workspace/                       <span class="cm">← 여기서 claude 실행</span>
+├── CLAUDE.md                    <span class="cm">← 공통 규칙</span>
+├── CONTEXT.md                   <span class="cm">← 현재 작업 상태 (세션 간 공유)</span>
+├── .claude/
+│   ├── settings.json            <span class="cm">← additionalDirectories 설정</span>
+│   └── settings.local.json      <span class="cm">← 개인 경로 (git 제외)</span>
+├── bip-frontend/
+│   └── CLAUDE.md
+├── bip-pipeline/
+│   └── CLAUDE.md
+└── bip-shared/
+    └── CLAUDE.md</pre>
+
+        <h3>CONTEXT.md — 세션 간 상태 공유 파일</h3>
+<pre><span class="hd">## 현재 작업 (2026-04-12)</span>
+태스크: NL2SQL 엔드포인트 + Oracle 연동
+
+<span class="hd">## 완료</span>
+- bip-pipeline: FastAPI 라우터 기본 구조
+- bip-shared: OracleConnector 클래스
+
+<span class="hd">## 진행 중</span>
+- bip-pipeline: nl2sql.py SQL 검증 로직 (미완)
+
+<span class="hd">## 중요 결정사항</span>
+- ROWNUM 대신 FETCH FIRST 사용</pre>
+
+        <h3>세션 시작 프롬프트 (멀티 레포 환경)</h3>
+<pre>CONTEXT.md와 .claude/session-backend.md를 먼저 읽고,
+현재 상태를 파악한 후 진행 중인 작업부터 이어서 시작해줘.</pre>
+
+        <div style="margin-top:14px;background:var(--why-bg);border:1px solid var(--why-border);border-radius:6px;padding:14px 18px;font-size:13px;color:#2a3a80">
+          <strong>⚡ 탐색은 넓게, 수정은 좁게</strong><br>
+          additionalDirectories로 여러 레포를 읽어오는 건 자유롭게 해도 돼요. 단, 한 세션에서 여러 레포를 동시에 수정하면 컨텍스트가 빠르게 차고 혼란이 생겨요. 실제 수정 작업은 해당 레포 세션에 집중하세요.
+        </div>
+      </div>
+    </div>
+  </section>
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">왜</span><span class="layer-title">이 개념이 왜 필요한가</span></div>
+      <div class="layer-body">
+        <p>실제 프로젝트는 레포가 여러 개인 경우가 많아요. 프론트엔드, 백엔드, 공유 라이브러리, 파이프라인이 각자 다른 폴더에 있는데, 모든 세션이 관련 레포에 <strong>동시에 접근</strong>해야 하는 상황이 생겨요.</p>
+        <p>Claude Code는 기본적으로 실행한 디렉토리만 알고 있어요. 다른 레포에 접근하려면 <strong>추가 디렉토리 설정</strong>이 필요해요. 이 설정을 어디에 넣느냐에 따라 효과 범위가 달라져요.</p>
+      </div>
+    </div>
+    <div class="layer principle">
+      <div class="layer-header"><span class="layer-badge">원칙</span><span class="layer-title">무엇을 해야 하는가</span></div>
+      <div class="layer-body">
+        <ul>
+          <li><strong>모든 세션에 항상 필요한 레포</strong> → 전역 설정 (<code>~/.claude/settings.json</code>)</li>
+          <li><strong>팀 전체가 공유해야 하는 레포</strong> → 프로젝트 설정 (<code>.claude/settings.json</code>, git 커밋)</li>
+          <li><strong>내 로컬 경로만 다른 경우</strong> → 로컬 설정 (<code>.claude/settings.local.json</code>, git 제외)</li>
+          <li>한 세션에 모든 레포를 몰아넣지 마세요. 컨텍스트가 빠르게 차고 혼란이 생겨요.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">설정 위치별 방법</span></div>
+      <div class="layer-body">
+        <h3>① 전역 설정 — 모든 세션에 항상 적용</h3>
+<pre><span class="cm">// ~/.claude/settings.json</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [
+      <span class="str">"../bip-frontend"</span>,    <span class="cm">← 항상 접근 허용할 레포들</span>
+      <span class="str">"../bip-shared"</span>,
+      <span class="str">"../bip-pipeline"</span>
+    ]
+  }
+}</pre>
+
+        <h3>② 프로젝트 설정 — 팀 공유 (git 커밋)</h3>
+<pre><span class="cm">// .claude/settings.json  ← git에 커밋, 팀 전체 적용</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"../bip-shared"</span>],
+    <span class="str">"deny"</span>: [<span class="str">"Read(.env)"</span>]
+  }
+}</pre>
+
+        <h3>③ 로컬 설정 — 개인 경로 (git 제외)</h3>
+<pre><span class="cm">// .claude/settings.local.json  ← .gitignore에 추가, 개인용</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"/Users/yeji/workspace/bip-docs"</span>]
+  }
+}</pre>
+
+        <h3>④ 세션 중 임시 추가 — /add-dir 슬래시 커맨드</h3>
+<pre><span class="cm"># 실행 중인 세션에 즉시 추가, 권한도 함께 부여됨</span>
+/add-dir ../bip-frontend
+/add-dir ../bip-shared
+
+<span class="cm"># 또는 시작 시 플래그로</span>
+claude --add-dir ../bip-frontend --add-dir ../bip-shared</pre>
+
+        <h3>⑤ 추가 디렉토리의 CLAUDE.md도 함께 로드</h3>
+<pre><span class="cm">// settings.json에 env 추가 → 각 레포의 CLAUDE.md도 자동 로드</span>
+{
+  <span class="str">"env"</span>: {
+    <span class="str">"CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"</span>: <span class="str">"1"</span>
+  },
+  <span class="str">"permissions"</span>: {
+    <span class="str">"additionalDirectories"</span>: [<span class="str">"../bip-frontend"</span>, <span class="str">"../bip-shared"</span>]
+  }
+}</pre>
+      </div>
+    </div>
+
+    <div class="layer practice">
+      <div class="layer-header"><span class="layer-badge">실전</span><span class="layer-title">멀티 레포 디렉토리 구조 패턴</span></div>
+      <div class="layer-body">
+        <h3>패턴 A — 워크스페이스 루트에서 실행</h3>
+<pre>workspace/                       <span class="cm">← 여기서 claude 실행</span>
+├── CLAUDE.md                    <span class="cm">← 공통 규칙 (모든 세션 읽음)</span>
+├── CONTEXT.md                   <span class="cm">← 현재 작업 상태 (세션 간 공유)</span>
+├── .claude/
+│   ├── settings.json            <span class="cm">← 팀 공유 설정 (git 커밋)</span>
+│   ├── settings.local.json      <span class="cm">← 개인 설정 (git 제외)</span>
+│   ├── session-backend.md       <span class="cm">← 백엔드 세션 역할</span>
+│   ├── session-frontend.md      <span class="cm">← 프론트엔드 세션 역할</span>
+│   └── session-orch.md          <span class="cm">← 오케스트레이터 역할</span>
+├── bip-frontend/
+│   └── CLAUDE.md                <span class="cm">← 프론트엔드 특화 규칙</span>
+├── bip-pipeline/
+│   └── CLAUDE.md                <span class="cm">← 파이프라인 특화 규칙</span>
+└── bip-shared/
+    └── CLAUDE.md                <span class="cm">← 공유 라이브러리 규칙</span></pre>
+
+        <h3>패턴 B — 각 레포에서 실행 + additionalDirectories</h3>
+<pre>~/repos/bip-pipeline/            <span class="cm">← 여기서 claude 실행</span>
+├── CLAUDE.md
+└── .claude/
+    └── settings.json
+        {
+          "permissions": {
+            "additionalDirectories": [
+              "../bip-shared",      <span class="cm">← 공유 라이브러리 접근</span>
+              "../bip-docs"         <span class="cm">← 문서 레포 접근</span>
+            ]
+          }
+        }</pre>
+
+        <h3>CONTEXT.md 패턴 — 세션 간 상태 공유</h3>
+<pre><span class="cm"># workspace/CONTEXT.md — 세션 시작 시 항상 먼저 읽게 하는 파일</span>
+
+<span class="hd">## 현재 작업 (2026-04-12)</span>
+태스크: NL2SQL 엔드포인트 + Oracle 연동
+
+<span class="hd">## 완료</span>
+- bip-pipeline: FastAPI 라우터 기본 구조
+- bip-shared: OracleConnector 클래스
+
+<span class="hd">## 진행 중</span>
+- bip-pipeline: nl2sql.py SQL 검증 로직 (미완)
+
+<span class="hd">## 다음</span>
+- 테스트 작성
+- bip-frontend: 쿼리 입력 UI 연동
+
+<span class="hd">## 중요 결정사항</span>
+- ROWNUM 대신 FETCH FIRST 사용
+- 쿼리 타임아웃 30초</pre>
+
+        <h3>세션 시작 프롬프트</h3>
+<pre>CONTEXT.md와 .claude/session-backend.md를 먼저 읽고,
+현재 상태를 파악한 후 진행 중인 작업부터 이어서 시작해줘.</pre>
+      </div>
+    </div>
+
+    <div class="layer why">
+      <div class="layer-header"><span class="layer-badge">주의</span><span class="layer-title">한 세션에 모든 레포를 넣지 마세요</span></div>
+      <div class="layer-body">
+        <p>모든 레포에 additionalDirectories로 접근 권한을 주면 탐색은 편리하지만, 한 세션에서 여러 레포를 동시에 수정하면 컨텍스트가 빠르게 소진되고 어떤 레포에 있는지 혼란이 생겨요.</p>
+        <p>권장 패턴: <strong>탐색(읽기)은 넓게, 수정(쓰기)은 좁게.</strong> 관련 레포 내용을 읽어오는 것은 additionalDirectories로 자유롭게 하되, 실제 수정 작업은 해당 레포 세션에서 집중해서 처리하세요.</p>
+      </div>
+    </div>
   </section>
 
   <!-- 1.6 -->
@@ -1782,9 +2014,21 @@ messages=[
   </div>
 
   <div class="checklist-part">
+    <div class="checklist-part-title">멀티 레포 / 멀티 폴더 설정</div>
+    <ul class="checklist">
+      <li><span class="chk"></span>항상 접근할 레포 → <code>~/.claude/settings.json</code>의 <code>additionalDirectories</code>에 추가</li>
+      <li><span class="chk"></span>팀 공유 접근 레포 → <code>.claude/settings.json</code>에 추가 (git 커밋)</li>
+      <li><span class="chk"></span>내 로컬 경로만 다른 경우 → <code>.claude/settings.local.json</code>에 추가 (git 제외, .gitignore 등록)</li>
+      <li><span class="chk"></span>각 레포 CLAUDE.md도 로드하려면 <code>CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1</code> env 설정</li>
+      <li><span class="chk"></span>워크스페이스 루트에 공통 <code>CLAUDE.md</code>와 <code>CONTEXT.md</code> 배치</li>
+      <li><span class="chk"></span>탐색(읽기)은 넓게, 수정(쓰기)은 해당 레포 세션에서 집중</li>
+    </ul>
+  </div>
+
+  <div class="checklist-part">
     <div class="checklist-part-title">매 세션 시작할 때</div>
     <ul class="checklist">
-      <li><span class="chk"></span>이전 작업 상태 요약 제공</li>
+      <li><span class="chk"></span>이전 작업 상태 요약 제공 (CONTEXT.md 읽기)</li>
       <li><span class="chk"></span>이번 세션 목표 명확히 선언</li>
       <li><span class="chk"></span>중요한 제약 상기시키기</li>
       <li><span class="chk"></span>민감 정보가 프롬프트에 포함되지 않았는지 확인</li>
@@ -1807,7 +2051,7 @@ messages=[
       <li><span class="chk"></span>변경 사항 요약 및 검토</li>
       <li><span class="chk"></span>위험도에 맞는 리뷰 게이트 통과</li>
       <li><span class="chk"></span>작업 로그 업데이트</li>
-      <li><span class="chk"></span>다음 세션을 위한 상태 파일 업데이트</li>
+      <li><span class="chk"></span>CONTEXT.md 업데이트 (다음 세션이 이어받을 수 있게)</li>
     </ul>
   </div>
 
