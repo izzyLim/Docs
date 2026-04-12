@@ -65,59 +65,86 @@
     color: var(--muted);
     font-size: 0.9rem;
   }
+  .group-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-title:first-of-type {
+    margin-top: 0;
+  }
 </style>
 </head>
 <body>
   <main class="container">
     <h1>Docs</h1>
-    <p class="subtitle">Claude & 관련 도구 가이드 모음</p>
+    <p class="subtitle">기술 가이드 & 아키텍처 문서 모음</p>
+
+    <h2 class="group-title">BIP-Agents 아키텍처</h2>
     <ul>
       <li>
-        <a class="card" href="claude_harness_guide.html">
-          <div class="card-title">Claude 하네스 엔지니어링 가이드</div>
-          <div class="card-desc">claude_harness_guide.html</div>
-        </a>
-      </li>
-      <li>
-        <a class="card" href="claude_workflow_guide.html">
-          <div class="card-title">Claude Code 실전 워크플로우 가이드</div>
-          <div class="card-desc">claude_workflow_guide.html</div>
-        </a>
-      </li>
-      <li>
-        <a class="card" href="claude_agent_sdk_guide.html">
-          <div class="card-title">Claude Agent SDK — 멀티 세션 오케스트레이션 가이드</div>
-          <div class="card-desc">claude_agent_sdk_guide.html</div>
-        </a>
-      </li>
-      <li>
-        <a class="card" href="openclaw_guide.html">
-          <div class="card-title">OpenClaw 완전 가이드</div>
-          <div class="card-desc">openclaw_guide.html</div>
-        </a>
-      </li>
-      <li>
-        <a class="card" href="deepagents_guide.html">
-          <div class="card-title">Deep Agents 기술 가이드</div>
-          <div class="card-desc">deepagents_guide.html</div>
+        <a class="card" href="bip_agents_architecture.html">
+          <div class="card-title">BIP-Agents 전체 아키텍처</div>
+          <div class="card-desc">전체 시스템 — 에이전트 관계, 인프라, MCP, 데이터 흐름</div>
         </a>
       </li>
       <li>
         <a class="card" href="stock_screener_architecture.html">
           <div class="card-title">BIP 종목 추천 에이전트 아키텍처</div>
-          <div class="card-desc">stock_screener_architecture.html</div>
-        </a>
-      </li>
-      <li>
-        <a class="card" href="nl2sql_data_layer_reference.html">
-          <div class="card-title">NL2SQL & 데이터 레이어 개념 레퍼런스</div>
-          <div class="card-desc">nl2sql_data_layer_reference.html</div>
+          <div class="card-desc">종목 추천 에이전트 상세</div>
         </a>
       </li>
       <li>
         <a class="card" href="checklist_agent_architecture.html">
           <div class="card-title">BIP 체크리스트 모니터링 에이전트 아키텍처</div>
-          <div class="card-desc">checklist_agent_architecture.html</div>
+          <div class="card-desc">체크리스트 에이전트 상세</div>
+        </a>
+      </li>
+    </ul>
+
+    <h2 class="group-title">Claude Code & AI 에이전트</h2>
+    <ul>
+      <li>
+        <a class="card" href="claude_harness_guide.html">
+          <div class="card-title">Claude 하네스 엔지니어링 가이드</div>
+          <div class="card-desc">하네스 설계 및 엔지니어링 패턴</div>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="claude_workflow_guide.html">
+          <div class="card-title">Claude Code 실전 워크플로우 가이드</div>
+          <div class="card-desc">실전 워크플로우 및 활용 전략</div>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="claude_agent_sdk_guide.html">
+          <div class="card-title">Claude Agent SDK — 멀티 세션 오케스트레이션 가이드</div>
+          <div class="card-desc">멀티 세션 에이전트 오케스트레이션</div>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="deepagents_guide.html">
+          <div class="card-title">Deep Agents 기술 가이드</div>
+          <div class="card-desc">Deep Agents 프레임워크 기술 레퍼런스</div>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="openclaw_guide.html">
+          <div class="card-title">OpenClaw 완전 가이드</div>
+          <div class="card-desc">OpenClaw 프레임워크 가이드</div>
+        </a>
+      </li>
+    </ul>
+
+    <h2 class="group-title">데이터 & 인프라</h2>
+    <ul>
+      <li>
+        <a class="card" href="nl2sql_data_layer_reference.html">
+          <div class="card-title">NL2SQL & 데이터 레이어 개념 레퍼런스</div>
+          <div class="card-desc">자연어 → SQL 변환 및 데이터 레이어 설계</div>
         </a>
       </li>
     </ul>
