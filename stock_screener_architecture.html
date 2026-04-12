@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIP 종목 추천 에이전트 아키텍처</title>
+<style>
+  :root { --bg: #f8fafc; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --accent: #2563eb; --green: #059669; --yellow: #d97706; --red: #dc2626; --purple: #7c3aed; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 28px; margin-bottom: 8px; color: var(--accent); }
+  h2 { font-size: 20px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: var(--text); }
+  p, li { font-size: 14px; color: var(--text); }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+  .card-accent { border-left: 4px solid var(--accent); }
+  .card-green { border-left: 4px solid var(--green); }
+  .card-yellow { border-left: 4px solid var(--yellow); }
+  .card-red { border-left: 4px solid var(--red); }
+  .card-purple { border-left: 4px solid var(--purple); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'SF Mono', Consolas, monospace; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0; }
+  pre code { background: none; padding: 0; color: inherit; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-right: 4px; }
+  .badge-done { background: #d1fae5; color: #065f46; }
+  .badge-wip { background: #fef3c7; color: #92400e; }
+  .badge-todo { background: #fee2e2; color: #991b1b; }
+  .flow-diagram { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'SF Mono', monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; }
+  ul { padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } body { padding: 16px; } }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .updated { font-size: 12px; color: var(--muted); text-align: right; margin-top: 32px; border-top: 1px solid var(--border); padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>BIP 종목 추천 에이전트 아키텍처</h1>
+<p class="subtitle">Version 3.0 | Phase 1+2 구현 완료 | TradingAgents debate discipline 차용</p>
+
+<div class="toc">
+  <strong>목차</strong>
+  <ol>
+    <li><a href="#overview">시스템 개요</a></li>
+    <li><a href="#architecture">아키텍처 흐름</a></li>
+    <li><a href="#phase1">Phase 1: Deterministic 스크리닝</a></li>
+    <li><a href="#phase2">Phase 2: 멀티 에이전트 토론</a></li>
+    <li><a href="#grading">등급 결정 로직</a></li>
+    <li><a href="#presets">7개 스크리닝 프리셋</a></li>
+    <li><a href="#scoring">4카테고리 스코어링</a></li>
+    <li><a href="#tools">MCP 도구 분배</a></li>
+    <li><a href="#output">출력 형식</a></li>
+    <li><a href="#cost">비용/성능</a></li>
+    <li><a href="#files">파일 경로</a></li>
+    <li><a href="#todo">미구현 / TODO</a></li>
+    <li><a href="#risks">위험/한계</a></li>
+  </ol>
+</div>
+
+<!-- 1. 시스템 개요 -->
+<h2 id="overview">1. 시스템 개요</h2>
+
+<div class="card card-accent">
+  <p><strong>목표:</strong> 한국 주식(KOSPI/KOSDAQ) 대상으로 매일 자동 종목 스크리닝 + Bull/Bear 토론 기반 투자 의견 제시</p>
+  <p><strong>핵심 원칙:</strong> 스코어링/판정은 deterministic, LLM은 분석 메모 + 방향 판정만</p>
+  <p><strong>참고:</strong> <a href="https://github.com/TauricResearch/TradingAgents">TradingAgents</a>의 Bull/Bear debate discipline 차용 (10개 에이전트 전면 복제 아님)</p>
+</div>
+
+<div class="grid-2">
+  <div class="card card-green">
+    <h3>매일 자동 실행</h3>
+    <p>Airflow DAG → BIP-Agents API → 텔레그램 발송</p>
+  </div>
+  <div class="card card-green">
+    <h3>개별 종목 분석</h3>
+    <p>API 호출로 특정 종목 심층 분석 가능</p>
+  </div>
+</div>
+
+<!-- 2. 아키텍처 흐름 -->
+<h2 id="architecture">2. 아키텍처 흐름</h2>
+
+<div class="flow-diagram">
+Phase 1: Deterministic 스크리닝
+    analytics_stock_daily + consensus_estimates + analytics_valuation
+    <span style="color:#64748b;">→ 149개 기본 후보 (시총 5000억+, 거래대금 10억+, 당일급등 제외)</span>
+    → 7개 프리셋 필터 → 30~40개
+    → 4카테고리 스코어링 + 품질 필터 (수익률 10%+, RR 1.5+)
+    → 상위 15개
+                    │
+                    ▼
+Phase 2: 멀티 에이전트 토론 <span style="color:#64748b;">(상위 5개, 병렬 실행)</span>
+    ┌─ 기술 분석가 (Haiku + MCP)
+    ├─ 재무 분석가 (Haiku + MCP)  ─── 4개 병렬 ──→ Analyst Memo
+    ├─ 뉴스 분석가 (Haiku + MCP)
+    └─ 수급 분석가 (Haiku + MCP)
+                    │
+    ┌─ Bull Researcher (Sonnet) ─── 매수 논거
+    └─ Bear Researcher (Sonnet) ─── 매도 논거 + 한국 특화 반증
+                    │
+    Research Manager (Haiku) ─── 방향 판정 (bull_strong ~ bear_strong)
+                    │
+    Deterministic 등급: Phase1 스코어 + 방향 modifier
+    → Buy / Overweight / Hold / Underweight / Sell
+                    │
+                    ▼
+    stock_recommendations DB + 텔레그램 발송
+</div>
+
+<!-- 3. Phase 1 -->
+<h2 id="phase1">3. Phase 1: Deterministic 스크리닝</h2>
+
+<div class="card">
+  <h3>SQL 기반 1차 필터</h3>
+  <ul>
+    <li><strong>데이터 소스:</strong> analytics_stock_daily + stock_info + analytics_valuation + consensus_estimates</li>
+    <li><strong>유동성 필터:</strong> 시총 5,000억+, 거래대금 10억+</li>
+    <li><strong>추격매수 방지:</strong> 당일 +5% 초과 급등주 제외</li>
+    <li><strong>수급 데이터:</strong> 최근 5일 외국인/기관 연속 순매수일수, 누적금액</li>
+    <li><strong>컨센서스:</strong> consensus_estimates 별도 JOIN (목표가, 투자의견)</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>품질 필터 (scorer 단계)</h3>
+  <table>
+    <tr><th>필터</th><th>기준</th><th>목적</th></tr>
+    <tr><td>최소 수익률</td><td>목표가 / 현재가 &ge; 1.10 (+10%)</td><td>수익성 없는 추천 배제</td></tr>
+    <tr><td>최소 손익비</td><td>RR &ge; 1.50</td><td>위험 대비 수익 불리한 종목 배제</td></tr>
+    <tr><td>진입가 > 손절가</td><td>entry_high > stop_loss</td><td>비정상 케이스 배제</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>목표가 계산 우선순위</h3>
+  <ol>
+    <li><strong>컨센서스 목표가</strong> (consensus_estimates.target_price) — 현재가 대비 +10% 이상일 때</li>
+    <li><strong>52주 고점 복귀</strong> — pct_from_52w_high에서 역산</li>
+    <li><strong>피보나치 확장</strong> — MA swing range × 1.618</li>
+    <li><strong>Fallback</strong> — 현재가 × 1.10 (최소 수익률)</li>
+  </ol>
+</div>
+
+<!-- 4. Phase 2 -->
+<h2 id="phase2">4. Phase 2: 멀티 에이전트 토론</h2>
+
+<div class="card card-purple">
+  <h3>4개 Analyst Memo (병렬, Haiku)</h3>
+  <p>각 에이전트가 MCP 도구로 실제 데이터를 수집하고 200자 이내 분석 메모 작성. 4개가 <code>asyncio.gather</code>로 동시 실행.</p>
+  <table>
+    <tr><th>에이전트</th><th>역할</th><th>결론</th></tr>
+    <tr><td>기술 분석가</td><td>추세, RSI/MACD, 지지/저항, 패턴</td><td>긍정/부정/중립</td></tr>
+    <tr><td>재무 분석가</td><td>매출/영업이익 추이, PER/PBR, DART 공시</td><td>긍정/부정/중립</td></tr>
+    <tr><td>뉴스 분석가</td><td>최근 뉴스, DART 공시, 업종 이슈</td><td>긍정/부정/중립</td></tr>
+    <tr><td>수급 분석가</td><td>외국인/기관 흐름, 프로그램 매매, 섹터 로테이션</td><td>긍정/부정/중립</td></tr>
+  </table>
+</div>
+
+<div class="grid-2">
+  <div class="card card-green">
+    <h3>Bull Researcher (Sonnet)</h3>
+    <ul>
+      <li>4개 analyst memo + Phase 1 스코어 입력</li>
+      <li>매수 논거 작성 (200자)</li>
+      <li>성장 잠재력, 기술적 반등, 수급 개선, 밸류 매력</li>
+      <li>확신도 표시: 높음/중간/낮음</li>
+    </ul>
+  </div>
+  <div class="card card-red">
+    <h3>Bear Researcher (Sonnet)</h3>
+    <ul>
+      <li>매도 논거 + <strong>한국 특화 반증 강제</strong></li>
+      <li>대주주 리스크, CB/BW/유상증자</li>
+      <li>잠정실적 쇼크, DART 공시 리스크</li>
+      <li>외국인 이탈, 프로그램 매도, 커버리지 부족</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card card-accent">
+  <h3>Research Manager (Haiku)</h3>
+  <p>Bull vs Bear 방향만 판정. 등급은 코드가 결정.</p>
+  <table>
+    <tr><th>방향</th><th>의미</th><th>modifier</th></tr>
+    <tr><td><strong>bull_strong</strong></td><td>Bull 압도적, Bear는 일반 리스크만</td><td>+2</td></tr>
+    <tr><td><strong>bull_win</strong></td><td>Bull 우세, Bear는 결정적이지 않음</td><td>+1</td></tr>
+    <tr><td><strong>neutral</strong></td><td>양쪽 비슷</td><td>0</td></tr>
+    <tr><td><strong>bear_win</strong></td><td>Bear 우세, 구체적 위험 제시</td><td>-1</td></tr>
+    <tr><td><strong>bear_strong</strong></td><td>치명적 결함 (재무조작, 상장폐지 등)</td><td>-2</td></tr>
+  </table>
+</div>
+
+<!-- 5. 등급 결정 -->
+<h2 id="grading">5. 등급 결정 로직</h2>
+
+<div class="card">
+  <h3>Deterministic: Phase 1 스코어 + Manager 방향</h3>
+  <table>
+    <tr><th>Phase 1 스코어</th><th>Base Level</th><th>+ bull_strong</th><th>+ bull_win</th><th>+ neutral</th><th>+ bear_win</th><th>+ bear_strong</th></tr>
+    <tr><td>75+</td><td>Buy (4)</td><td>Buy</td><td>Buy</td><td>Buy</td><td>Overweight</td><td>Hold</td></tr>
+    <tr><td>60~74</td><td>Overweight (3)</td><td>Buy</td><td>Buy</td><td>Overweight</td><td>Hold</td><td>Underweight</td></tr>
+    <tr><td>45~59</td><td>Hold (2)</td><td>Buy</td><td>Overweight</td><td>Hold</td><td>Underweight</td><td>Sell</td></tr>
+    <tr><td>30~44</td><td>Underweight (1)</td><td>Overweight</td><td>Hold</td><td>Underweight</td><td>Sell</td><td>Sell</td></tr>
+    <tr><td>&lt;30</td><td>Sell (0)</td><td>Hold</td><td>Underweight</td><td>Sell</td><td>Sell</td><td>Sell</td></tr>
+  </table>
+  <p style="font-size:12px; color:var(--muted); margin-top:8px;">LLM이 직접 등급을 주지 않음. 방향(±modifier)만 판정하고 최종 등급은 코드가 결정.</p>
+</div>
+
+<!-- 6. 프리셋 -->
+<h2 id="presets">6. 7개 스크리닝 프리셋</h2>
+
+<table>
+  <tr><th>#</th><th>전략</th><th>핵심 조건</th><th>스타일</th></tr>
+  <tr><td>1</td><td><strong>과매도 반등</strong></td><td>RSI&lt;45 + MACD양전환 + 수급 + 풀백존(BB&le;0.65, 이격&le;3%)</td><td>단기</td></tr>
+  <tr><td>2</td><td><strong>골든크로스</strong></td><td>MA5&gt;MA20 2% 이내 + vol&gt;1.2 + 풀백존</td><td>단기</td></tr>
+  <tr><td>3</td><td><strong>가치 모멘텀</strong></td><td>PER&lt;15 + ROE&gt;10 + 외국인3일+ + 이격-5~2 + 목표가+10%</td><td>중기</td></tr>
+  <tr><td>4</td><td><strong>돌파</strong></td><td>52w고점-2~-8% + vol&gt;1.5 + MA20위 + MA5*1.03 이내</td><td>단기</td></tr>
+  <tr><td>5</td><td><strong>심층 가치</strong></td><td>PER&lt;7 + PBR&lt;0.8 + ROE&gt;8 + MA20근접 + MA60지지</td><td>중기</td></tr>
+  <tr><td>6</td><td><strong>추세 추종</strong></td><td>정배열(MA20&gt;60&gt;120) + 52w-3~-15% + 수급 + RSI40~72</td><td>중기</td></tr>
+  <tr><td>7</td><td><strong>VCP 돌파</strong></td><td>완전정배열(MA5&gt;20&gt;60&gt;120) + vol200%+ + 52w-2~-15% + 수급</td><td>단기</td></tr>
+</table>
+<p style="font-size:12px; color:var(--muted);">프리셋은 OR 조건 — 하나라도 매칭되면 후보에 포함. 한 종목이 여러 프리셋에 매칭 가능.</p>
+
+<!-- 7. 스코어링 -->
+<h2 id="scoring">7. 4카테고리 스코어링</h2>
+
+<div class="grid-2">
+  <div class="card card-accent">
+    <h3>기술적 (40점)</h3>
+    <ul>
+      <li>RSI 과매도: 0~10점</li>
+      <li>MACD 양전환: 0~10점</li>
+      <li>볼린저밴드 위치: 0~5점</li>
+      <li>추세 (MA 기반): 0~5점</li>
+      <li>거래량 비율: 0~5점</li>
+      <li>52주 위치: 0~5점</li>
+    </ul>
+  </div>
+  <div class="card card-green">
+    <h3>수급 (25점)</h3>
+    <ul>
+      <li>외국인 순매수: 0~10점</li>
+      <li>기관 순매수: 0~8점</li>
+      <li>외국인+기관 동반: +4점</li>
+      <li>5일 누적 순매수: 0~3점</li>
+    </ul>
+  </div>
+  <div class="card card-yellow">
+    <h3>밸류에이션 (20점)</h3>
+    <ul>
+      <li>PER 매력도: 0~6점</li>
+      <li>PBR 저평가: 0~4점</li>
+      <li>ROE 수준: 0~4점</li>
+      <li>컨센서스 괴리율: 0~6점</li>
+    </ul>
+  </div>
+  <div class="card card-purple">
+    <h3>매크로 (15점)</h3>
+    <ul>
+      <li>VIX 수준: &plusmn;5점</li>
+      <li>KOSPI 등락: &plusmn;3점</li>
+      <li>원/달러 환율: &plusmn;2점</li>
+      <li>중립 시작 (7.5점)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 8. MCP 도구 -->
+<h2 id="tools">8. MCP 도구 분배</h2>
+
+<table>
+  <tr><th>에이전트</th><th>허용 도구</th></tr>
+  <tr><td>기술 분석가</td><td><code>realtime_stock_price</code>, <code>realtime_index</code>, <code>db_market_indices</code>, <code>krx_stock_trade_info</code>, <code>get_indicator_context</code></td></tr>
+  <tr><td>재무 분석가</td><td><code>dart_financial_statement</code>, <code>dart_corp_search</code>, <code>dart_disclosure_list</code>, <code>krx_stock_base_info</code></td></tr>
+  <tr><td>뉴스 분석가</td><td><code>news_search_naver</code>, <code>news_search_web</code>, <code>dart_disclosure_list</code></td></tr>
+  <tr><td>수급 분석가</td><td><code>realtime_investor</code>, <code>realtime_program_trade</code>, <code>db_investor_flow</code>, <code>db_investor_trading</code>, <code>sector_performance</code></td></tr>
+  <tr><td>Bull / Bear</td><td>없음 (분석가 메모 기반으로만 작성)</td></tr>
+  <tr><td>Manager</td><td>없음 (방향 판정만)</td></tr>
+</table>
+
+<!-- 9. 출력 -->
+<h2 id="output">9. 출력 형식</h2>
+
+<div class="card" style="background:#1e293b; color:#e2e8f0;">
+<pre style="background:none; padding:0; margin:0;"><code>📊 BIP 종목 분석 — 2026-04-11 (데이터: 2026-04-10)
+
+KOSPI 5,859(+1.4%) / KOSDAQ 1,094(+1.6%) / VIX 19.2
+
+🟢 Overweight — 한국앤컴퍼니 (000240) 66점
+현재: 50,500원(+3.1%) / 목표: 72,900원 (+44.3%)
+매수: 47,500~50,500원 | 손절: 46,300원 | RR 5.3
+
+Bull
+  • 사상 최대 실적 + PER 4.5배 극저평가
+  • 외국인+기관 동반 순매수
+  • 타이어 업황 개선 지속
+
+Bear
+  • 대주주 지분 변동 리스크
+  • 원자재 가격 변동성
+  • 글로벌 경쟁 심화
+
+📌 판정: Bull 우세 — 실적 확인 + 수급 개선이 밸류 부담 상쇄
+
+———————————————
+투자 참고용이며, 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.</code></pre>
+</div>
+
+<!-- 10. 비용/성능 -->
+<h2 id="cost">10. 비용 / 성능</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>비용 (5종목 기준)</h3>
+    <table>
+      <tr><th>단계</th><th>모델</th><th>호출수</th><th>비용</th></tr>
+      <tr><td>4 Analyst × 5종목</td><td>Haiku</td><td>20회</td><td>~$0.02</td></tr>
+      <tr><td>Bull+Bear × 5종목</td><td>Sonnet</td><td>10회</td><td>~$0.05</td></tr>
+      <tr><td>Manager × 5종목</td><td>Haiku</td><td>5회</td><td>~$0.01</td></tr>
+      <tr><td><strong>합계</strong></td><td></td><td><strong>35회</strong></td><td><strong>~$0.08</strong></td></tr>
+    </table>
+    <p style="font-size:12px; color:var(--muted);">월간: $0.08 × 22일 = $1.76</p>
+  </div>
+  <div class="card">
+    <h3>성능</h3>
+    <table>
+      <tr><th>항목</th><th>소요 시간</th></tr>
+      <tr><td>Phase 1 스크리닝</td><td>~2초</td></tr>
+      <tr><td>Phase 2 토론 (5종목 병렬)</td><td>~130초</td></tr>
+      <tr><td><strong>총 소요</strong></td><td><strong>~2분 15초</strong></td></tr>
+    </table>
+    <p style="font-size:12px; color:var(--muted);">병렬화 전: ~15분 → 후: ~2분 (7배 개선)</p>
+  </div>
+</div>
+
+<!-- 11. 파일 경로 -->
+<h2 id="files">11. 파일 경로</h2>
+
+<div class="card">
+  <h3>BIP-Agents (스크리너)</h3>
+  <table>
+    <tr><th>파일</th><th>역할</th></tr>
+    <tr><td><code>langgraph/screener/screener_node.py</code></td><td>SQL 스크리닝 + 7개 프리셋</td></tr>
+    <tr><td><code>langgraph/screener/scorer.py</code></td><td>4카테고리 스코어링 + 매매포인트 + 품질필터</td></tr>
+    <tr><td><code>langgraph/screener/analysts.py</code></td><td>4개 전문 애널리스트 (Haiku + MCP)</td></tr>
+    <tr><td><code>langgraph/screener/debate.py</code></td><td>Bull/Bear (Sonnet) + Manager (Haiku) + 등급</td></tr>
+    <tr><td><code>langgraph/screener/explainer.py</code></td><td>코드 템플릿 메시지 생성</td></tr>
+    <tr><td><code>langgraph/screener/main.py</code></td><td>Phase 1+2 통합, 병렬 실행</td></tr>
+    <tr><td><code>langgraph/screener/graph.py</code></td><td>LangGraph 3노드 조립</td></tr>
+    <tr><td><code>langgraph/screener/state.py</code></td><td>ScreenerState TypedDict</td></tr>
+    <tr><td><code>langgraph/api.py</code></td><td>FastAPI 엔드포인트</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>BIP-Pipeline (참조)</h3>
+  <table>
+    <tr><th>파일</th><th>역할</th></tr>
+    <tr><td><code>postgres/curated_views.sql</code></td><td>v_technical/valuation/flow_signals 뷰</td></tr>
+    <tr><td><code>airflow/dags/indicators/calculator.py</code></td><td>기술 지표 계산 함수</td></tr>
+    <tr><td><code>docs/security_governance.md</code></td><td>보안 규칙 (민감 테이블 차단)</td></tr>
+  </table>
+</div>
+
+<!-- 12. TODO -->
+<h2 id="todo">12. 미구현 / TODO</h2>
+
+<div class="card card-yellow">
+  <h3>Phase 2 고도화</h3>
+  <ul>
+    <li><span class="badge badge-todo">TODO</span> Bull/Bear 요약을 불릿 3개 형식으로 변경</li>
+    <li><span class="badge badge-todo">TODO</span> 메시지에 Manager 판정 근거 1줄 추가</li>
+    <li><span class="badge badge-todo">TODO</span> stock_recommendations DB 저장 로직</li>
+    <li><span class="badge badge-todo">TODO</span> Airflow DAG 생성 (평일 18:00 KST)</li>
+  </ul>
+</div>
+
+<div class="card card-red">
+  <h3>Phase 3: Shadow Mode + 학습</h3>
+  <ul>
+    <li><span class="badge badge-todo">TODO</span> recommendation_performance 테이블 (D+1/D+5/D+20)</li>
+    <li><span class="badge badge-todo">TODO</span> Shadow mode 4~8주 (기록만, 발송 안 함)</li>
+    <li><span class="badge badge-todo">TODO</span> 성과 기반 가중치 캘리브레이션</li>
+    <li><span class="badge badge-todo">TODO</span> BM25 Memory (과거 유사 상황 검색)</li>
+    <li><span class="badge badge-todo">TODO</span> 미국 주식 확장</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>데이터 보강</h3>
+  <ul>
+    <li><span class="badge badge-todo">TODO</span> stock_info.sector 데이터 적재 (현재 전부 NULL)</li>
+    <li><span class="badge badge-todo">TODO</span> 캔들스틱 패턴 감지 (해머/도지/포식)</li>
+    <li><span class="badge badge-todo">TODO</span> MACD 다이버전스 계산</li>
+    <li><span class="badge badge-todo">TODO</span> OM 메타데이터/리니지 등록</li>
+  </ul>
+</div>
+
+<!-- 13. 위험/한계 -->
+<h2 id="risks">13. 위험 / 한계</h2>
+
+<div class="card card-red">
+  <ul>
+    <li><strong>백테스트 필수:</strong> Shadow mode 없이 운영 전환 금지</li>
+    <li><strong>LLM 환각:</strong> Deterministic 스코어를 baseline으로 유지, LLM은 방향만 판정</li>
+    <li><strong>면책 조항:</strong> 모든 출력에 "투자 참고용" disclaimer 필수</li>
+    <li><strong>민감 데이터:</strong> portfolio/users 테이블 접근 금지 (security_governance.md)</li>
+    <li><strong>섹터 데이터 부재:</strong> stock_info.sector가 전부 NULL → 섹터 중립 불가</li>
+    <li><strong>MCP 도구 지연:</strong> 뉴스/DART 조회가 종목당 80~290초 → 병렬화로 완화</li>
+    <li><strong>비용 통제:</strong> 종목당 ~$0.016, 테스트 반복 시 비용 주의</li>
+  </ul>
+</div>
+
+<div class="updated">
+  마지막 업데이트: 2026-04-11 | v3.0 | Phase 1+2 구현 완료
+</div>
+
+</body>
+</html>
