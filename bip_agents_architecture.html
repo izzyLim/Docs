@@ -360,6 +360,38 @@ graph TD
 <p class="diagram-label">MCP 도구 22개: 7개 카테고리 (실시간 7 / 외부 4 / DART 4 / 뉴스 2 / DB 4 / 맥락 1 / KRX 3) — 소스: bip-stock-mcp/server.py</p>
 
 <div class="card">
+  <h3>MCP 도구 전체 목록 (22개)</h3>
+  <table>
+    <tr><th>카테고리</th><th>Tool 함수명</th><th>모듈</th><th>설명</th></tr>
+    <tr><td rowspan="4">DART 공시</td><td><code>dart_disclosure_list</code></td><td>dart.py</td><td>공시 목록 (날짜/기업/유형 필터)</td></tr>
+    <tr><td><code>dart_disclosure</code></td><td>dart.py</td><td>공시 원문 문서 목록 조회</td></tr>
+    <tr><td><code>dart_financial_statement</code></td><td>dart.py</td><td>XBRL 재무제표 (연결/별도, 분기별)</td></tr>
+    <tr><td><code>dart_corp_search</code></td><td>dart.py</td><td>기업명으로 DART 고유번호 검색</td></tr>
+    <tr><td rowspan="3">KRX</td><td><code>krx_stock_trade_info</code></td><td>krx.py</td><td>종목 일별 시세</td></tr>
+    <tr><td><code>krx_stock_base_info</code></td><td>krx.py</td><td>종목 기본정보 (시총, PER 등)</td></tr>
+    <tr><td><code>krx_market_index</code></td><td>krx.py</td><td>KOSPI/KOSDAQ/KPI200 지수</td></tr>
+    <tr><td rowspan="2">뉴스</td><td><code>news_search_naver</code></td><td>news.py</td><td>네이버 뉴스 API 검색</td></tr>
+    <tr><td><code>news_search_web</code></td><td>news.py</td><td>SerpAPI 웹 검색 (해외 이슈)</td></tr>
+    <tr><td rowspan="4">DB 조회</td><td><code>db_investor_flow</code></td><td>db.py</td><td>투자자별 순매수 집계 (외국인/기관/개인)</td></tr>
+    <tr><td><code>db_investor_trading</code></td><td>db.py</td><td>종목별 수급 상세 (순매수/순매도 TOP5)</td></tr>
+    <tr><td><code>db_semiconductor_prices</code></td><td>db.py</td><td>DRAM/NAND 반도체 현물가</td></tr>
+    <tr><td><code>db_market_indices</code></td><td>db.py</td><td>주요 시장 지수 (KOSPI, S&amp;P500, VIX 등)</td></tr>
+    <tr><td rowspan="7">실시간</td><td><code>realtime_stock_price</code></td><td>realtime.py</td><td>종목 실시간 현재가 (한투 API)</td></tr>
+    <tr><td><code>realtime_index</code></td><td>realtime.py</td><td>KOSPI/KOSDAQ 실시간 지수 (한투 API)</td></tr>
+    <tr><td><code>realtime_investor</code></td><td>realtime.py</td><td>장중 투자자별 매매동향 (한투 API)</td></tr>
+    <tr><td><code>realtime_program_trade</code></td><td>realtime.py</td><td>프로그램 매매 동향 (한투 API)</td></tr>
+    <tr><td><code>realtime_fx_rate</code></td><td>realtime.py</td><td>원/달러 환율 (한투 API)</td></tr>
+    <tr><td><code>night_futures_ewy</code></td><td>realtime.py</td><td>EWY ETF — 코스피 갭 예측 (yfinance)</td></tr>
+    <tr><td><code>crypto_price</code></td><td>realtime.py</td><td>크립토 실시간 시세 (Upbit)</td></tr>
+    <tr><td rowspan="2">글로벌/섹터</td><td><code>global_index</code></td><td>realtime.py</td><td>글로벌 지수 — 닛케이, S&amp;P500, DAX 등 (yfinance)</td></tr>
+    <tr><td><code>sector_performance</code></td><td>realtime.py</td><td>업종별 등락률 (KRX)</td></tr>
+    <tr><td rowspan="2">장전 분석</td><td><code>preopen_stock_price</code></td><td>realtime.py</td><td>동시호가 예상 체결가 (08:30~09:00)</td></tr>
+    <tr><td><code>preopen_index</code></td><td>realtime.py</td><td>장전 지수 예상가 (08:30~09:00)</td></tr>
+    <tr><td>맥락</td><td><code>get_indicator_context</code></td><td>context.py</td><td>지표 90일 분포/추세/변동성 맥락 (percentile, zscore)</td></tr>
+  </table>
+</div>
+
+<div class="card">
   <h3>에이전트별 도구 접근</h3>
   <table>
     <tr><th>에이전트</th><th>접근 방식</th><th>도구 범위</th></tr>
