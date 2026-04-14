@@ -301,6 +301,7 @@ graph LR
     E --> E1["Customer ← Order ← OrderItem"]
       </div>
     </div>
+    <div class="tw">
       <table>
         <thead><tr><th>구성 요소</th><th>정의</th><th>예시</th></tr></thead>
         <tbody>
@@ -357,6 +358,7 @@ graph LR
     SK -->|IS_A| Semi
       </div>
     </div>
+    <div class="layer code">
       <div class="lh"><span class="lb-badge">예시</span><span class="lb-title">기업-섹터 지식그래프 구조</span></div>
       <div class="lb">
 <pre>삼성전자 ──IS_A──────▶ 반도체 기업
@@ -428,6 +430,7 @@ graph TB
     ABox -."인스턴스".-> TBox
       </div>
     </div>
+    <div class="layer code">
       <div class="lh"><span class="lb-badge">개념</span><span class="lb-title">학술적 구분</span></div>
       <div class="lb">
 <pre><span class="cm">── Ontology = TBox (Terminological Box, 스키마) ──</span>
@@ -573,6 +576,7 @@ graph TB
     SL -.->|"다른 층위 (정형 DB 특화)"| KG
       </div>
     </div>
+    <div class="callout tip">
       <span class="ci">⚡</span>
       <div class="cb"><strong>핵심 구분</strong> Ontology는 스키마(어떤 개념이 존재하는가), Knowledge Graph는 스키마+데이터(실제 인스턴스 포함), Semantic Layer는 정형 DB 위의 비즈니스 메트릭 추상화. 서로 대체 관계가 아니에요.</div>
     </div>
@@ -624,7 +628,8 @@ graph TB
         MP2 --> S3
     end
       </div>
-    </div>;gap:12px;margin:16px 0">
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0">
       <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;overflow:hidden">
         <div style="background:rgba(90,122,240,.12);padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--acc2);font-weight:600">① Direct Prompting</div>
         <div style="padding:14px 16px;font-size:12px;color:var(--mid);line-height:1.7">
@@ -769,6 +774,7 @@ graph LR
     end
       </div>
     </div>
+    <div class="tw">
       <table>
         <thead><tr><th>항목</th><th>dbt Core (MetricFlow)</th><th>Cube.js</th></tr></thead>
         <tbody>
@@ -859,6 +865,7 @@ graph TB
     end
       </div>
     </div>
+    <div class="tw">
       <table>
         <thead><tr><th>전략</th><th>방법</th><th>장점</th><th>단점</th><th>대표 도구</th></tr></thead>
         <tbody>
