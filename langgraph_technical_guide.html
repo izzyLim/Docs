@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangGraph 기술 가이드 — 개념부터 프로덕션까지</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true, theme:'default', themeVariables:{fontSize:'13px'}});</script>
+<style>
+  :root { --bg: #f8fafc; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --accent: #2563eb; --green: #059669; --yellow: #d97706; --red: #dc2626; --purple: #7c3aed; --teal: #0891b2; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 24px; max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 28px; margin-bottom: 8px; color: var(--accent); }
+  h2 { font-size: 20px; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: var(--text); }
+  p, li { font-size: 14px; }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+  .card-accent { border-left: 4px solid var(--accent); }
+  .card-green { border-left: 4px solid var(--green); }
+  .card-yellow { border-left: 4px solid var(--yellow); }
+  .card-red { border-left: 4px solid var(--red); }
+  .card-purple { border-left: 4px solid var(--purple); }
+  .card-teal { border-left: 4px solid var(--teal); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+  th { background: #f1f5f9; font-weight: 600; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 13px; line-height: 1.5; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-green { background: #d1fae5; color: #065f46; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+  .tag-yellow { background: #fef3c7; color: #92400e; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-purple { background: #ede9fe; color: #5b21b6; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  ul { padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .highlight { background: #fef3c7; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 14px; }
+  .updated { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 40px; }
+  .stat { text-align: center; padding: 12px; }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>LangGraph 기술 가이드</h1>
+<p class="subtitle">개념부터 프로덕션까지 — 상태 기반 멀티 에이전트 시스템 구축 | v1.1.7 (2026-04)</p>
+
+<!-- 핵심 지표 -->
+<div class="card" style="display:grid;grid-template-columns:repeat(5,1fr);">
+  <div class="stat"><div class="stat-num">29.2K</div><div class="stat-label">GitHub Stars</div></div>
+  <div class="stat"><div class="stat-num">MIT</div><div class="stat-label">라이선스</div></div>
+  <div class="stat"><div class="stat-num">v1.1.7</div><div class="stat-label">최신 버전</div></div>
+  <div class="stat"><div class="stat-num">Py/JS</div><div class="stat-label">지원 언어</div></div>
+  <div class="stat"><div class="stat-num">LangChain</div><div class="stat-label">개발사</div></div>
+</div>
+
+<!-- 1. 개요 -->
+<h2>1. LangGraph란?</h2>
+
+<div class="card card-accent">
+  <h3>한 줄 정의</h3>
+  <p>AI 에이전트 워크플로우를 <strong>그래프(노드 + 엣지)</strong>로 모델링하는 상태 기반 오케스트레이션 프레임워크. LangChain 위에 구축되었지만 <strong>독립적으로도 사용 가능</strong>.</p>
+</div>
+
+<div class="card">
+  <h3>왜 LangGraph인가? — LangChain과의 차이</h3>
+  <table>
+    <tr><th>항목</th><th>LangChain (Chain)</th><th>LangGraph (Graph)</th></tr>
+    <tr><td><strong>실행 흐름</strong></td><td>A → B → C (선형)</td><td>분기, 루프, 병렬 가능</td></tr>
+    <tr><td><strong>상태 관리</strong></td><td>없음 (입출력 전달만)</td><td>공유 State 객체</td></tr>
+    <tr><td><strong>Human-in-the-Loop</strong></td><td>수동 구현</td><td>네이티브 interrupt()</td></tr>
+    <tr><td><strong>내구성</strong></td><td>없음</td><td>체크포인터로 크래시 복구</td></tr>
+    <tr><td><strong>멀티 에이전트</strong></td><td>어색한 통합</td><td>1등 시민 설계</td></tr>
+    <tr><td><strong>적합 상황</strong></td><td>단순 파이프라인, RAG</td><td>복잡한 에이전트, 루프/분기 필요</td></tr>
+  </table>
+</div>
+
+<div class="highlight">
+  <strong>판단 기준:</strong> 워크플로우에 분기(if-then)나 루프(retry/revise)가 필요하면 LangGraph, 단순 직선 파이프라인이면 LangChain으로 충분.
+</div>
+
+<!-- 2. 핵심 개념 -->
+<h2>2. 핵심 개념 6가지</h2>
+
+<div class="mermaid">
+graph LR
+    subgraph Concepts["LangGraph 핵심 개념"]
+        STATE["State<br/>공유 메모리"]
+        NODE["Node<br/>작업 단위"]
+        EDGE["Edge<br/>흐름 연결"]
+        COND["Conditional Edge<br/>조건 분기"]
+        CHECK["Checkpointer<br/>상태 저장"]
+        HITL["Human-in-the-Loop<br/>사람 개입"]
+    end
+
+    STATE --> NODE
+    NODE --> EDGE
+    EDGE --> COND
+    COND --> CHECK
+    CHECK --> HITL
+
+    style STATE fill:#dbeafe,stroke:#2563eb
+    style NODE fill:#d1fae5,stroke:#059669
+    style EDGE fill:#fef3c7,stroke:#d97706
+    style COND fill:#ede9fe,stroke:#7c3aed
+    style CHECK fill:#fee2e2,stroke:#dc2626
+    style HITL fill:#ccfbf1,stroke:#0891b2
+</div>
+
+<div class="grid-2">
+  <div class="card card-accent">
+    <h3>1) State (상태)</h3>
+    <p>그래프 전체에서 공유되는 <strong>메모리 객체</strong>. 모든 노드가 읽고 쓴다.</p>
+    <pre>class AgentState(TypedDict):
+    messages: List[str]    # 대화 이력
+    research: str          # 리서치 결과
+    draft: str             # 작성된 초안
+    iteration: int         # 반복 횟수</pre>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">Channel Reducer로 병합 전략 정의 가능 (배열은 concat, 스칼라는 override)</p>
+  </div>
+  <div class="card card-green">
+    <h3>2) Node (노드)</h3>
+    <p>하나의 <strong>작업 단위</strong> (함수). State를 받아서 변환 후 반환.</p>
+    <pre>def research_agent(state: AgentState):
+    result = llm.invoke(state["messages"])
+    return {"research": result.content}</pre>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">각 노드는 독립적으로 테스트 가능. async 함수도 지원.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card card-yellow">
+    <h3>3) Edge (엣지)</h3>
+    <p>노드 간 <strong>직접 연결</strong>. A가 끝나면 B로 이동.</p>
+    <pre>workflow.add_edge("researcher", "writer")
+# researcher 완료 → writer 실행</pre>
+  </div>
+  <div class="card card-purple">
+    <h3>4) Conditional Edge (조건 분기)</h3>
+    <p>조건에 따라 <strong>다른 노드로 라우팅</strong>. 루프의 핵심.</p>
+    <pre>def should_revise(state):
+    if state["fact_check"] == "FAIL" \
+       and state["iteration"] < 3:
+        return "writer"  # 다시 작성
+    return "formatter"   # 완료
+
+workflow.add_conditional_edges(
+    "fact_checker", should_revise,
+    {"writer": "writer",
+     "formatter": "formatter"}
+)</pre>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card card-red">
+    <h3>5) Checkpointer (체크포인터)</h3>
+    <p>매 노드 실행 후 <strong>상태 자동 저장</strong>. 크래시 복구, 대화 지속.</p>
+    <pre># 개발용
+checkpointer = MemorySaver()
+
+# 프로덕션용
+checkpointer = PostgresSaver.from_conn_string(
+    "postgresql://user:pass@host/db"
+)
+
+app = workflow.compile(
+    checkpointer=checkpointer
+)</pre>
+    <table>
+      <tr><th>유형</th><th>용도</th><th>특징</th></tr>
+      <tr><td><code>MemorySaver</code></td><td>개발/테스트</td><td>인메모리, 재시작 시 소멸</td></tr>
+      <tr><td><code>SqliteSaver</code></td><td>경량 프로덕션</td><td>파일 기반, 단일 프로세스</td></tr>
+      <tr><td><code>PostgresSaver</code></td><td>엔터프라이즈</td><td>수평 확장, 다중 인스턴스</td></tr>
+    </table>
+  </div>
+  <div class="card card-teal">
+    <h3>6) Human-in-the-Loop (사람 개입)</h3>
+    <p>특정 노드 전에 <strong>실행 일시 중지</strong>. 사람이 검토/승인 후 재개.</p>
+    <pre># 방법 1: 특정 노드 전 중단
+app = workflow.compile(
+    interrupt_before=["fact_checker"]
+)
+
+# 방법 2: 노드 안에서 직접 중단
+def review_node(state):
+    decision = interrupt({
+        "message": "검토해주세요",
+        "plan": state["draft"],
+        "actions": ["approve", "reject"]
+    })
+    return {"approved": decision == "approve"}</pre>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">승인 게이트, 콘텐츠 검수, 컴플라이언스 워크플로우에 필수</p>
+  </div>
+</div>
+
+<!-- 3. 그래프 구조 -->
+<h2>3. 그래프 구축 전체 흐름</h2>
+
+<div class="mermaid">
+sequenceDiagram
+    participant D as 개발자
+    participant SG as StateGraph
+    participant N as 노드 등록
+    participant E as 엣지 연결
+    participant C as 컴파일
+    participant R as 실행
+
+    D->>SG: StateGraph(AgentState) 생성
+    D->>N: add_node("name", function)
+    D->>N: add_node("name2", function2)
+    D->>E: set_entry_point("name")
+    D->>E: add_edge / add_conditional_edges
+    D->>C: workflow.compile(checkpointer=...)
+    C-->>R: 실행 가능한 app 반환
+    R->>R: app.invoke(initial_state)
+    R->>R: 또는 app.stream(initial_state)
+</div>
+
+<div class="card">
+  <h3>완전한 코드 예시: 리서치 → 작성 → 팩트체크 루프</h3>
+  <pre>from langgraph.graph import StateGraph, END
+from typing import TypedDict, List
+
+# 1. State 정의
+class AgentState(TypedDict):
+    messages: List[str]
+    research: str
+    draft: str
+    fact_check_result: str
+    iteration: int
+
+# 2. 노드 함수
+def researcher(state: AgentState):
+    result = llm.invoke(f"조사해줘: {state['messages'][-1]}")
+    return {"research": result.content}
+
+def writer(state: AgentState):
+    result = llm.invoke(f"이 자료로 글 써줘: {state['research']}")
+    return {"draft": result.content, "iteration": state["iteration"] + 1}
+
+def fact_checker(state: AgentState):
+    result = llm.invoke(f"팩트체크: {state['draft']}")
+    return {"fact_check_result": result.content}
+
+# 3. 조건 분기
+def should_revise(state: AgentState):
+    if "FAIL" in state["fact_check_result"] and state["iteration"] < 3:
+        return "writer"    # 다시 작성
+    return END             # 완료
+
+# 4. 그래프 구성
+workflow = StateGraph(AgentState)
+workflow.add_node("researcher", researcher)
+workflow.add_node("writer", writer)
+workflow.add_node("fact_checker", fact_checker)
+
+workflow.set_entry_point("researcher")
+workflow.add_edge("researcher", "writer")
+workflow.add_edge("writer", "fact_checker")
+workflow.add_conditional_edges("fact_checker", should_revise)
+
+# 5. 컴파일 + 실행
+app = workflow.compile()
+result = app.invoke({
+    "messages": ["삼성전자 반도체 사업 현황 분석해줘"],
+    "research": "", "draft": "", "fact_check_result": "",
+    "iteration": 0,
+})</pre>
+</div>
+
+<div class="mermaid">
+graph TD
+    START((시작)) --> R["researcher<br/>자료 조사"]
+    R --> W["writer<br/>글 작성"]
+    W --> FC["fact_checker<br/>팩트체크"]
+    FC -->|FAIL & iter < 3| W
+    FC -->|PASS or iter >= 3| DONE((종료))
+
+    style R fill:#dbeafe,stroke:#2563eb
+    style W fill:#d1fae5,stroke:#059669
+    style FC fill:#fee2e2,stroke:#dc2626
+</div>
+
+<!-- 4. 멀티 에이전트 패턴 -->
+<h2>4. 멀티 에이전트 아키텍처 패턴</h2>
+
+<div class="grid-3">
+  <div class="card card-accent">
+    <h3>Supervisor 패턴</h3>
+    <p>중앙 라우터가 전문 에이전트에 작업 위임</p>
+    <p style="font-size:12px;color:var(--muted);">BIP 체크리스트 에이전트가 이 패턴</p>
+  </div>
+  <div class="card card-green">
+    <h3>Hierarchical 패턴</h3>
+    <p>다계층 관리자 → 팀장 → 작업자 구조</p>
+    <p style="font-size:12px;color:var(--muted);">대규모 조직형 에이전트</p>
+  </div>
+  <div class="card card-purple">
+    <h3>Swarm 패턴</h3>
+    <p>에이전트가 자율적으로 다음 에이전트에 작업 전달</p>
+    <p style="font-size:12px;color:var(--muted);">탈중앙 협업</p>
+  </div>
+</div>
+
+<h3>4-1. Supervisor 패턴 상세</h3>
+
+<div class="mermaid">
+graph TD
+    USER["사용자 질문"] --> SUP["Supervisor<br/>(라우터)"]
+    SUP -->|"코딩 작업"| CODER["Coder Agent"]
+    SUP -->|"리서치 작업"| RES["Researcher Agent"]
+    SUP -->|"데이터 분석"| DATA["Data Analyst"]
+    CODER --> SUP
+    RES --> SUP
+    DATA --> SUP
+    SUP -->|"최종 답변"| USER
+
+    style SUP fill:#faf5ff,stroke:#7c3aed,stroke-width:3px
+    style CODER fill:#d1fae5,stroke:#059669
+    style RES fill:#dbeafe,stroke:#2563eb
+    style DATA fill:#fef3c7,stroke:#d97706
+</div>
+
+<div class="card">
+  <h3>Supervisor 구현 코드</h3>
+  <pre>def supervisor(state: AgentState):
+    """질문을 분석하고 적절한 에이전트로 라우팅"""
+    response = llm.invoke(
+        f"이 질문을 어떤 에이전트가 처리해야 할까?\n"
+        f"질문: {state['messages'][-1]}\n"
+        f"선택지: coder, researcher, data_analyst\n"
+        f"에이전트 이름만 답해."
+    )
+    return {"next_agent": response.content.strip()}
+
+def route_to_agent(state: AgentState):
+    return state["next_agent"]
+
+workflow.add_conditional_edges(
+    "supervisor", route_to_agent,
+    {
+        "coder": "coder",
+        "researcher": "researcher",
+        "data_analyst": "data_analyst",
+    }
+)</pre>
+</div>
+
+<h3>4-2. Hierarchical 패턴 상세</h3>
+
+<div class="mermaid">
+graph TD
+    TOP["Top Supervisor"] --> TEAM_A["Team A Leader<br/>(Sub-graph)"]
+    TOP --> TEAM_B["Team B Leader<br/>(Sub-graph)"]
+    TEAM_A --> A1["Worker A1"]
+    TEAM_A --> A2["Worker A2"]
+    TEAM_B --> B1["Worker B1"]
+    TEAM_B --> B2["Worker B2"]
+    A1 & A2 --> TEAM_A
+    B1 & B2 --> TEAM_B
+    TEAM_A & TEAM_B --> TOP
+
+    style TOP fill:#faf5ff,stroke:#7c3aed,stroke-width:3px
+    style TEAM_A fill:#dbeafe,stroke:#2563eb
+    style TEAM_B fill:#d1fae5,stroke:#059669
+</div>
+
+<div class="card card-yellow">
+  <h3>Sub-graph (하위 그래프)</h3>
+  <p>복잡한 에이전트를 <strong>독립된 하위 그래프</strong>로 분리. 각각 자체 State 스키마와 체크포인팅.</p>
+  <pre># 팀 A의 하위 그래프
+team_a = StateGraph(TeamAState)
+team_a.add_node("worker_a1", worker_a1_fn)
+team_a.add_node("worker_a2", worker_a2_fn)
+team_a_compiled = team_a.compile()
+
+# 메인 그래프에 하위 그래프 추가
+main_workflow.add_node("team_a", team_a_compiled)</pre>
+</div>
+
+<!-- 5. 상태 관리 심화 -->
+<h2>5. 상태 관리 심화</h2>
+
+<div class="mermaid">
+graph LR
+    subgraph StateFlow["State 흐름"]
+        INIT["초기 State"] --> N1["Node 1<br/>state 읽기 → 변환 → 반환"]
+        N1 -->|Reducer 적용| S1["State 업데이트"]
+        S1 --> N2["Node 2<br/>state 읽기 → 변환 → 반환"]
+        N2 -->|Reducer 적용| S2["State 업데이트"]
+        S2 --> N3["..."]
+    end
+
+    subgraph Checkpoint["체크포인트"]
+        CP1["Checkpoint 1<br/>(Node 1 이후)"]
+        CP2["Checkpoint 2<br/>(Node 2 이후)"]
+    end
+
+    S1 -.-> CP1
+    S2 -.-> CP2
+
+    style StateFlow fill:#f0fdf4,stroke:#059669
+    style Checkpoint fill:#fee2e2,stroke:#dc2626
+</div>
+
+<div class="card">
+  <h3>Channel Reducer: 상태 병합 전략</h3>
+  <table>
+    <tr><th>데이터 타입</th><th>Reducer</th><th>동작</th><th>예시</th></tr>
+    <tr>
+      <td>메시지 리스트</td>
+      <td><code>operator.add</code></td>
+      <td>기존 리스트에 추가 (append)</td>
+      <td><code>["A"] + ["B"] = ["A","B"]</code></td>
+    </tr>
+    <tr>
+      <td>단일 값</td>
+      <td>기본 (덮어쓰기)</td>
+      <td>최신 값으로 교체</td>
+      <td><code>"old" → "new"</code></td>
+    </tr>
+    <tr>
+      <td>카운터</td>
+      <td>커스텀 함수</td>
+      <td>누적</td>
+      <td><code>lambda old, new: old + new</code></td>
+    </tr>
+  </table>
+  <pre>from typing import Annotated
+import operator
+
+class AgentState(TypedDict):
+    # 메시지는 누적 (append)
+    messages: Annotated[list, operator.add]
+    # 반복 횟수는 덮어쓰기
+    iteration: int
+    # 에이전트 이름은 덮어쓰기
+    current_agent: str</pre>
+</div>
+
+<div class="card card-yellow">
+  <h3>State 설계 베스트 프랙티스</h3>
+  <ul>
+    <li><strong>플랫 dict 피하기</strong> — 에이전트별 네임스페이스 분리 (<code>state.research</code>, <code>state.draft</code>)</li>
+    <li><strong>TypedDict 필수</strong> — 타입 체크로 런타임 에러 방지</li>
+    <li><strong>스키마 변경 주의</strong> — 체크포인트가 쌓인 후 스키마 변경하면 호환성 깨짐</li>
+    <li><strong>최소 필드</strong> — 필요한 것만. 거대한 State는 직렬화/역직렬화 비용 증가</li>
+  </ul>
+</div>
+
+<!-- 6. 스트리밍 -->
+<h2>6. 스트리밍 & 실시간 UI</h2>
+
+<div class="card">
+  <h3>3가지 스트리밍 모드</h3>
+  <table>
+    <tr><th>모드</th><th>코드</th><th>출력</th><th>용도</th></tr>
+    <tr>
+      <td><strong>노드 단위</strong></td>
+      <td><code>app.stream(state)</code></td>
+      <td>노드 완료마다 State 스냅샷</td>
+      <td>진행 상황 표시</td>
+    </tr>
+    <tr>
+      <td><strong>토큰 단위</strong></td>
+      <td><code>app.astream_events(state)</code></td>
+      <td>LLM 토큰 하나하나</td>
+      <td>실시간 채팅 UI</td>
+    </tr>
+    <tr>
+      <td><strong>커스텀 이벤트</strong></td>
+      <td><code>astream_events + 필터</code></td>
+      <td>특정 이벤트만</td>
+      <td>에이전트별 진행률</td>
+    </tr>
+  </table>
+  <pre># 노드 단위 스트리밍
+for chunk in app.stream(initial_state):
+    for node_name, output in chunk.items():
+        print(f"[{node_name}] 완료")
+
+# 토큰 단위 스트리밍 (실시간 채팅)
+async for event in app.astream_events(initial_state, version="v2"):
+    if event["event"] == "on_llm_stream":
+        print(event["data"]["chunk"].content, end="", flush=True)</pre>
+</div>
+
+<div class="mermaid">
+sequenceDiagram
+    participant U as 사용자 (웹 UI)
+    participant WS as WebSocket
+    participant LG as LangGraph App
+    participant LLM as LLM API
+
+    U->>WS: 질문 전송
+    WS->>LG: app.astream_events()
+    LG->>LLM: API 호출
+    LLM-->>LG: 토큰 스트림
+    LG-->>WS: on_llm_stream 이벤트
+    WS-->>U: 실시간 토큰 표시
+    LG-->>WS: on_chain_end 이벤트
+    WS-->>U: 노드 완료 표시
+</div>
+
+<!-- 7. 프로덕션 -->
+<h2>7. 프로덕션 배포</h2>
+
+<div class="mermaid">
+graph TD
+    subgraph Dev["개발"]
+        CODE["코드 작성"] --> TEST["단위 테스트"]
+        TEST --> TRACE["LangSmith 트레이싱"]
+    end
+
+    subgraph Deploy["배포"]
+        DOCKER["Docker 컨테이너"] --> PG["PostgreSQL<br/>체크포인터"]
+        DOCKER --> REDIS["Redis<br/>캐시 (선택)"]
+        DOCKER --> MONITOR["LangSmith<br/>모니터링"]
+    end
+
+    subgraph Scale["스케일링"]
+        LB["로드 밸런서"] --> APP1["App 인스턴스 1"]
+        LB --> APP2["App 인스턴스 2"]
+        APP1 & APP2 --> PG_S["PostgreSQL<br/>(공유 체크포인트)"]
+    end
+
+    Dev --> Deploy --> Scale
+
+    style Dev fill:#f0fdf4,stroke:#059669
+    style Deploy fill:#dbeafe,stroke:#2563eb
+    style Scale fill:#faf5ff,stroke:#7c3aed
+</div>
+
+<div class="card card-red">
+  <h3>프로덕션 체크리스트</h3>
+  <table>
+    <tr><th>항목</th><th>개발</th><th>프로덕션</th></tr>
+    <tr><td><strong>체크포인터</strong></td><td>MemorySaver</td><td><span class="tag tag-green">PostgresSaver 필수</span></td></tr>
+    <tr><td><strong>타임아웃</strong></td><td>없음</td><td>노드별 타임아웃 설정 (LLM 호출 지연 대비)</td></tr>
+    <tr><td><strong>루프 제한</strong></td><td>없음</td><td><span class="tag tag-red">Circuit Breaker</span> (최대 반복 횟수)</td></tr>
+    <tr><td><strong>모니터링</strong></td><td>print</td><td>LangSmith 트레이싱 + 알림</td></tr>
+    <tr><td><strong>에러 처리</strong></td><td>예외 발생</td><td>노드별 try/catch + 폴백 경로</td></tr>
+    <tr><td><strong>비용 관리</strong></td><td>무제한</td><td>토큰 카운팅 + 일일 한도</td></tr>
+    <tr><td><strong>보안</strong></td><td>없음</td><td>Guardrail 노드 (PII 필터링, 감사 로그)</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>LangGraph 2.0 신기능 (2026)</h3>
+  <ul>
+    <li><strong>Guardrail 노드</strong> — 콘텐츠 필터링, 레이트 리밋, 감사 로깅이 1등 시민</li>
+    <li><strong>MCP 통합</strong> — Model Context Protocol로 외부 도구 표준화 연동</li>
+    <li><strong>A2A 프로토콜</strong> — Agent-to-Agent 메시지 큐 기반 크로스 프레임워크 통신</li>
+    <li><strong>interrupt() API</strong> — 예외 기반이 아닌 명시적 중단점 + 구조화된 페이로드</li>
+  </ul>
+</div>
+
+<!-- 8. LangGraph Platform -->
+<h2>8. LangGraph Platform & LangSmith</h2>
+
+<div class="grid-2">
+  <div class="card card-accent">
+    <h3>LangGraph Platform</h3>
+    <p>에이전트 배포/관리 인프라</p>
+    <ul>
+      <li><strong>Cloud</strong> — LangChain 호스팅 (가장 쉬운 시작)</li>
+      <li><strong>Hybrid</strong> — SaaS 컨트롤 플레인 + 자체 데이터 플레인</li>
+      <li><strong>Self-Hosted</strong> — 전체 자체 인프라 (VPC 내)</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">내장 메모리, Studio 개발환경, API 제공</p>
+  </div>
+  <div class="card card-green">
+    <h3>LangSmith</h3>
+    <p>옵저버빌리티 & 디버깅</p>
+    <ul>
+      <li>모든 에이전트 호출 <strong>트레이스 시각화</strong></li>
+      <li>사이클 카운트, 인터럽트 포인트, 분기 결정 추적</li>
+      <li>프로덕션 모니터링 + 알림</li>
+      <li>A/B 테스트, 평가 데이터셋</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">"순환 그래프를 옵저버빌리티 없이 디버깅하는 건 고통"</p>
+  </div>
+</div>
+
+<!-- 9. 비용 -->
+<h2>9. 비용 구조</h2>
+
+<div class="card">
+  <table>
+    <tr><th>항목</th><th>추가 비용</th><th>설명</th></tr>
+    <tr><td><strong>LangGraph 라이브러리</strong></td><td>무료 (MIT)</td><td>오픈소스</td></tr>
+    <tr><td><strong>LLM API</strong></td><td>모델별 상이</td><td>노드마다 LLM 호출 → 체인보다 비용 높을 수 있음</td></tr>
+    <tr><td><strong>인프라 오버헤드</strong></td><td>+10~20%</td><td>체크포인팅 PostgreSQL, 상태 직렬화</td></tr>
+    <tr><td><strong>LangGraph Platform</strong></td><td>유료 (Enterprise)</td><td>셀프호스팅은 무료, 매니지드는 유료</td></tr>
+    <tr><td><strong>LangSmith</strong></td><td>무료 티어 있음</td><td>프로덕션 모니터링은 유료 플랜 권장</td></tr>
+  </table>
+</div>
+
+<!-- 10. 다른 프레임워크 비교 -->
+<h2>10. 다른 프레임워크 비교</h2>
+
+<table>
+  <tr>
+    <th>항목</th>
+    <th><span class="tag tag-blue">LangGraph</span></th>
+    <th><span class="tag tag-purple">CrewAI</span></th>
+    <th><span class="tag tag-green">AutoGen</span></th>
+    <th><span class="tag tag-yellow">Hermes Agent</span></th>
+  </tr>
+  <tr><td><strong>설계 철학</strong></td><td>그래프 기반 상태 머신</td><td>역할 기반 팀</td><td>대화 기반 협업</td><td>자기 개선 에이전트</td></tr>
+  <tr><td><strong>상태 관리</strong></td><td><span class="tag tag-green">네이티브</span></td><td>제한적</td><td>메시지 기반</td><td>3계층 메모리</td></tr>
+  <tr><td><strong>Human-in-the-Loop</strong></td><td><span class="tag tag-green">네이티브</span></td><td>제한적</td><td>가능</td><td>가능</td></tr>
+  <tr><td><strong>체크포인팅</strong></td><td><span class="tag tag-green">내장</span></td><td>없음</td><td>없음</td><td>SQLite</td></tr>
+  <tr><td><strong>스트리밍</strong></td><td><span class="tag tag-green">토큰 레벨</span></td><td>없음</td><td>제한적</td><td>가능</td></tr>
+  <tr><td><strong>학습/스킬</strong></td><td>없음</td><td>없음</td><td>없음</td><td><span class="tag tag-green">내장</span></td></tr>
+  <tr><td><strong>프로덕션 성숙도</strong></td><td>높음 (Klarna, Elastic 등)</td><td>중간</td><td>중간</td><td>초기</td></tr>
+  <tr><td><strong>웹 UI</strong></td><td>직접 구현</td><td>없음</td><td>없음</td><td>OpenAI 호환</td></tr>
+</table>
+
+<!-- 11. 참고 자료 -->
+<h2>11. 참고 자료</h2>
+
+<div class="card">
+  <ul>
+    <li><a href="https://github.com/langchain-ai/langgraph" target="_blank">GitHub — langchain-ai/langgraph</a> (29.2K stars, MIT)</li>
+    <li><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank">공식 문서</a></li>
+    <li><a href="https://docs.langchain.com/oss/python/langgraph/quickstart" target="_blank">Quickstart</a></li>
+    <li><a href="https://www.langchain.com/langgraph" target="_blank">LangGraph 제품 페이지</a></li>
+    <li><a href="https://blog.langchain.com/langgraph-platform-ga/" target="_blank">LangGraph Platform GA 발표</a></li>
+    <li><a href="https://dev.to/ottoaria/langgraph-in-2026-build-multi-agent-ai-systems-that-actually-work-3h5" target="_blank">LangGraph in 2026: Multi-Agent Systems (DEV)</a></li>
+    <li><a href="https://www.mager.co/blog/2026-03-12-langgraph-deep-dive/" target="_blank">LangGraph Deep Dive (Mager)</a></li>
+    <li><a href="https://dev.to/richard_dillon_b9c238186e/langgraph-20-the-definitive-guide-to-building-production-grade-ai-agents-in-2026-4j2b" target="_blank">LangGraph 2.0 Definitive Guide (DEV)</a></li>
+  </ul>
+</div>
+
+<div class="updated">
+  마지막 업데이트: 2026-04-14 | BIP-Pipeline 내부 스터디 문서
+</div>
+
+</body>
+</html>
