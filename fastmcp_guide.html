@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastMCP 가이드 — MCP 서버 구축부터 LangGraph 연동까지</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0b0d12;--s1:#10121a;--s2:#161920;--s3:#1c2030;
+  --b1:#222840;--b2:#2c3450;--b3:#384060;
+  --text:#d4daf0;--mid:#7880a8;--dim:#363e60;
+  --acc:#e09830;--acc2:#f8b840;--al:rgba(224,152,48,.08);
+  --blue:#5a7af0;--blue2:#7a9aff;--bluel:rgba(90,122,240,.08);
+  --grn:#30c880;--grn2:#50e898;--gl:rgba(48,200,128,.08);
+  --red:#f05050;--redl:rgba(240,80,80,.08);
+  --pur:#9060f0;--pur2:#b080ff;--purl:rgba(144,96,240,.08);
+  --teal:#30c8c0;--teal2:#50e8e0;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans KR',sans-serif;--serif:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.8}
+.hdr{position:sticky;top:0;z-index:200;background:rgba(11,13,18,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--b1);padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:15px;font-weight:800;color:var(--text)}.logo em{font-style:normal;color:var(--acc2)}
+.vtag{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--b1);padding:3px 10px;border-radius:20px}
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:1200px;margin:0 auto}
+.sb{position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;padding:28px 12px 28px 20px;border-right:1px solid var(--b1)}
+.sb::-webkit-scrollbar{width:3px}.sb::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.ng{margin-bottom:22px}.nl{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;padding-left:8px}
+.na{display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:5px;color:var(--mid);text-decoration:none;font-size:12.5px;line-height:1.4;transition:all .15s;margin-bottom:1px;border-left:2px solid transparent}
+.na:hover{color:var(--text);background:var(--s2)}.na.active{color:var(--acc2);border-left-color:var(--acc);background:var(--al)}
+.nn{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
+.main{padding:52px 60px 100px;min-width:0}
+.hero{margin-bottom:60px;padding-bottom:44px;border-bottom:1px solid var(--b1)}
+.hero-eye{font-family:var(--mono);font-size:11px;color:var(--acc);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}.hero-eye::after{content:'';flex:1;height:1px;background:var(--b1)}
+.hero h1{font-family:var(--serif);font-size:42px;font-weight:800;line-height:1.08;letter-spacing:-.03em;margin-bottom:16px}.hero h1 span{color:var(--acc2)}
+.hero-desc{font-size:15px;line-height:1.75;color:var(--mid);max-width:640px;margin-bottom:24px}
+.meta-pills{display:flex;gap:8px;flex-wrap:wrap}
+.mp{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid}
+.mp-b{color:var(--blue2);border-color:rgba(90,122,240,.3);background:var(--bluel)}
+.mp-g{color:var(--grn2);border-color:rgba(48,200,128,.3);background:var(--gl)}
+.mp-a{color:var(--acc2);border-color:rgba(224,152,48,.3);background:var(--al)}
+.mp-p{color:var(--pur2);border-color:rgba(144,96,240,.3);background:var(--purl)}
+.ph{margin:60px 0 32px;scroll-margin-top:74px}
+.ph-line{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.ph-num{font-family:var(--mono);font-size:11px;color:var(--acc);background:var(--al);border:1px solid rgba(224,152,48,.25);padding:3px 10px;border-radius:4px}
+.ph-title{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-.02em}
+.ph-div{height:1px;background:linear-gradient(to right,var(--b2),transparent)}
+.sec{margin-bottom:48px;scroll-margin-top:74px}
+.sec-title{font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--b1)}
+.concept-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:16px 0}
+.concept-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px 22px;position:relative;overflow:hidden}
+.concept-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.cc-blue::before{background:var(--blue)}.cc-green::before{background:var(--grn)}.cc-amber::before{background:var(--acc)}.cc-purple::before{background:var(--pur)}.cc-teal::before{background:var(--teal)}.cc-red::before{background:var(--red)}
+.cc-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;margin-bottom:8px}
+.cc-blue .cc-label{color:var(--blue2)}.cc-green .cc-label{color:var(--grn2)}.cc-amber .cc-label{color:var(--acc2)}.cc-purple .cc-label{color:var(--pur2)}.cc-teal .cc-label{color:var(--teal2)}.cc-red .cc-label{color:var(--red)}
+.cc-title{font-weight:700;font-size:14px;margin-bottom:6px}
+.cc-def{font-size:12px;color:var(--mid);line-height:1.6;font-style:italic;margin-bottom:8px;padding:8px 12px;background:var(--s2);border-radius:4px;border-left:2px solid var(--b2)}
+.cc-desc{font-size:12.5px;color:var(--mid);line-height:1.6}
+.layer{border-radius:8px;margin-bottom:10px;overflow:hidden}
+.lh{display:flex;align-items:center;gap:10px;padding:10px 16px}
+.lb-badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:3px}
+.lb-title{font-size:13px;font-weight:500}
+.lb{padding:12px 18px 16px;font-size:13.5px;line-height:1.8}
+.lb p{margin-bottom:8px}.lb p:last-child{margin-bottom:0}
+.lb ul,.lb ol{padding-left:18px;margin-bottom:8px}.lb li{margin-bottom:3px}
+.layer.info{background:rgba(90,122,240,.06);border:1px solid rgba(90,122,240,.2)}.layer.info .lh{color:var(--blue2)}.layer.info .lb-badge{background:rgba(90,122,240,.15);color:var(--blue2)}.layer.info .lb{color:#9ab0e8}
+.layer.success{background:rgba(48,200,128,.06);border:1px solid rgba(48,200,128,.2)}.layer.success .lh{color:var(--grn2)}.layer.success .lb-badge{background:rgba(48,200,128,.15);color:var(--grn2)}.layer.success .lb{color:#80d8a8}
+.layer.warn{background:rgba(240,80,80,.06);border:1px solid rgba(240,80,80,.2)}.layer.warn .lh{color:#f09090}.layer.warn .lb-badge{background:rgba(240,80,80,.15);color:#f09090}.layer.warn .lb{color:#d09090}
+.layer.amber{background:rgba(224,152,48,.06);border:1px solid rgba(224,152,48,.2)}.layer.amber .lh{color:var(--acc2)}.layer.amber .lb-badge{background:rgba(224,152,48,.15);color:var(--acc2)}.layer.amber .lb{color:#c09860}
+.layer.code{background:#080a10;border:1px solid var(--b2)}.layer.code .lh{color:var(--mid)}.layer.code .lb-badge{background:var(--s2);color:var(--dim)}.layer.code .lb{color:#a8b8d8}
+code{font-family:var(--mono);font-size:12px;background:var(--s2);color:var(--acc2);padding:1px 5px;border-radius:3px;border:1px solid var(--b1)}
+pre{background:#060810;border:1px solid var(--b1);border-radius:8px;padding:16px 20px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.7;color:#a8b8d8;margin:10px 0}
+.tw{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--s2);color:var(--mid);font-weight:600;padding:9px 14px;text-align:left;border-bottom:1px solid var(--b2);font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+td{padding:9px 14px;border-bottom:1px solid var(--b1);color:var(--mid);vertical-align:top}tr:last-child td{border-bottom:none}tr:hover td{background:var(--s1)}
+.tg{color:var(--grn2);font-weight:500}.tb{color:var(--blue2);font-weight:500}.tp{color:var(--pur2);font-weight:500}.ty{color:var(--acc2)}.tr{color:var(--red)}
+.callout{display:flex;gap:12px;padding:13px 17px;border-radius:8px;margin:14px 0;border-left:3px solid}
+.ci{font-size:14px;flex-shrink:0;margin-top:2px}.cb{font-size:13px;line-height:1.65}.cb strong{display:block;font-weight:600;margin-bottom:3px}
+.callout.tip{background:rgba(48,200,128,.07);border-color:var(--grn)}.callout.tip .cb{color:#60c890}
+.callout.info{background:rgba(90,122,240,.07);border-color:var(--blue)}.callout.info .cb{color:#8090c8}
+.callout.warn{background:rgba(240,80,80,.07);border-color:var(--red)}.callout.warn .cb{color:#c07070}
+.tag{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid;display:inline-block;margin:1px}
+.tag-b{color:var(--blue2);border-color:rgba(90,122,240,.3);background:rgba(90,122,240,.08)}
+.tag-g{color:var(--grn2);border-color:rgba(48,200,128,.3);background:rgba(48,200,128,.08)}
+.tag-a{color:var(--acc2);border-color:rgba(224,152,48,.3);background:rgba(224,152,48,.08)}
+.tag-r{color:var(--red);border-color:rgba(240,80,80,.3);background:rgba(240,80,80,.08)}
+h3{font-size:14px;font-weight:700;color:var(--text);margin:16px 0 8px}
+.mermaid-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px;margin:14px 0;overflow-x:auto}
+.mermaid-label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:block}
+.mermaid svg{max-width:100%;height:auto}
+.ref-item{padding:9px 0;border-bottom:1px solid var(--b1);font-size:13px;color:var(--mid)}.ref-item:last-child{border-bottom:none}
+.ref-item a{color:var(--acc2);text-decoration:none;font-family:var(--mono);font-size:11px}.ref-item a:hover{text-decoration:underline}
+footer{border-top:1px solid var(--b1);padding:26px 60px;display:flex;justify-content:space-between;align-items:center}footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
+@media(max-width:840px){.layout{grid-template-columns:1fr}.sb{display:none}.main{padding:28px 20px 60px}.hero h1{font-size:30px}.concept-grid{grid-template-columns:1fr}footer{flex-direction:column;gap:8px;padding:20px}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="logo"><em>FastMCP</em> 가이드</span>
+  <span class="vtag">v3.2 · 2026.04</span>
+</header>
+
+<div class="layout">
+
+<nav class="sb">
+  <div class="ng">
+    <div class="nl">개요</div>
+    <a class="na active" href="#intro"><span class="nn">00</span>MCP & FastMCP란?</a>
+    <a class="na" href="#install"><span class="nn">01</span>설치</a>
+  </div>
+  <div class="ng">
+    <div class="nl">핵심 개념</div>
+    <a class="na" href="#tools"><span class="nn">02</span>Tools (도구)</a>
+    <a class="na" href="#resources"><span class="nn">03</span>Resources (리소스)</a>
+    <a class="na" href="#prompts"><span class="nn">04</span>Prompts (프롬프트)</a>
+  </div>
+  <div class="ng">
+    <div class="nl">전송 모드</div>
+    <a class="na" href="#transport"><span class="nn">05</span>전송 모드 비교</a>
+    <a class="na" href="#sse"><span class="nn">06</span>SSE 서버 구성</a>
+  </div>
+  <div class="ng">
+    <div class="nl">연동</div>
+    <a class="na" href="#langgraph"><span class="nn">07</span>LangGraph 연동</a>
+    <a class="na" href="#client"><span class="nn">08</span>FastMCP 클라이언트</a>
+  </div>
+  <div class="ng">
+    <div class="nl">배포 & 운영</div>
+    <a class="na" href="#docker"><span class="nn">09</span>Docker 배포</a>
+    <a class="na" href="#debug"><span class="nn">10</span>디버깅 & Inspector</a>
+    <a class="na" href="#patterns"><span class="nn">11</span>설계 패턴</a>
+  </div>
+  <div class="ng">
+    <div class="nl">실전 사례</div>
+    <a class="na" href="#bip"><span class="nn">12</span>BIP MCP 서버 사례</a>
+    <a class="na" href="#refs"><span class="nn">13</span>참고 자료</a>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- 히어로 -->
+  <section class="hero" id="intro">
+    <div class="hero-eye">Model Context Protocol · Fast Pythonic MCP Server</div>
+    <h1>FastMCP<br><span>가이드</span></h1>
+    <p class="hero-desc">MCP(Model Context Protocol)는 AI 에이전트가 외부 도구와 데이터에 접근하는 표준 프로토콜. FastMCP는 이를 Python 데코레이터 한 줄로 구현할 수 있게 해주는 프레임워크. 도구 정의 → 스키마 자동 생성 → 서버 실행까지 5분.</p>
+    <div class="meta-pills">
+      <span class="mp mp-a">24.5K Stars</span>
+      <span class="mp mp-g">Apache 2.0</span>
+      <span class="mp mp-b">v3.2</span>
+      <span class="mp mp-a">Anthropic 표준</span>
+      <span class="mp mp-g">Python</span>
+      <span class="mp mp-p">Prefect</span>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2 class="sec-title">MCP란? — 에이전트의 USB 포트</h2>
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">MCP 프로토콜 구조</span>
+      <div class="mermaid">
+graph LR
+    subgraph Hosts["MCP 호스트 (AI 에이전트)"]
+        H1["Claude Desktop"]
+        H2["LangGraph Agent"]
+        H3["자체 앱"]
+    end
+    subgraph Protocol["MCP 프로토콜"]
+        P["표준화된 인터페이스\nTools / Resources / Prompts"]
+    end
+    subgraph Servers["MCP 서버"]
+        S1["DB 도구"]
+        S2["API 래핑"]
+        S3["파일 시스템"]
+        S4["웹 검색"]
+    end
+
+    Hosts --> Protocol
+    Protocol --> Servers
+
+    style Protocol fill:#201810,stroke:#e09830,color:#f8b840
+      </div>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card cc-amber">
+        <div class="cc-label">MCP</div>
+        <div class="cc-title">Model Context Protocol</div>
+        <div class="cc-def">Anthropic이 2024년 공개한 AI 도구 연결 표준. "AI 에이전트의 USB-C"라고 불림.</div>
+        <div class="cc-desc">어떤 AI 에이전트든 MCP 서버에 연결하면 도구를 사용 가능. 프로바이더 독립적.</div>
+      </div>
+      <div class="concept-card cc-green">
+        <div class="cc-label">FASTMCP</div>
+        <div class="cc-title">FastMCP</div>
+        <div class="cc-def">MCP 서버를 Python 데코레이터로 빠르게 구축하는 프레임워크. Prefect가 관리.</div>
+        <div class="cc-desc">FastMCP 1.0은 공식 MCP Python SDK에 편입됨. v3.0에서 독립적으로 진화.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01. 설치 -->
+  <div class="ph" id="install">
+    <div class="ph-line"><span class="ph-num">01</span><span class="ph-title">설치</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">SHELL</span><span class="lb-title">설치</span></div>
+      <div class="lb">
+<pre># uv 사용 (권장)
+uv pip install fastmcp
+
+# pip 사용
+pip install fastmcp
+
+# LangGraph 연동용
+pip install langchain-mcp-adapters</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02. Tools -->
+  <div class="ph" id="tools">
+    <div class="ph-line"><span class="ph-num">02</span><span class="ph-title">Tools — 도구 정의</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer info">
+      <div class="lh"><span class="lb-badge">개념</span><span class="lb-title">Tool = LLM이 호출하는 함수</span></div>
+      <div class="lb">
+        <p>Python 함수에 <code>@mcp.tool</code> 데코레이터를 붙이면, 타입 힌트와 docstring에서 <strong>스키마가 자동 생성</strong>됩니다. JSON Schema, 검증, 에러 처리 전부 자동.</p>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">도구 정의 기본</span></div>
+      <div class="lb">
+<pre>from fastmcp import FastMCP
+
+mcp = FastMCP("my-server")
+
+@mcp.tool
+def get_stock_price(ticker: str) -> dict:
+    """종목 현재가를 조회합니다.
+
+    Args:
+        ticker: 종목 코드 (예: 005930)
+    """
+    price = fetch_from_api(ticker)
+    return {"ticker": ticker, "price": price}
+
+@mcp.tool
+async def search_news(query: str, count: int = 5) -> list:
+    """뉴스를 검색합니다.
+
+    Args:
+        query: 검색어
+        count: 결과 수 (기본 5)
+    """
+    results = await news_api.search(query, count)
+    return results</pre>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>docstring이 곧 설명</strong> LLM은 이 docstring을 읽고 도구를 선택합니다. 잘 쓰면 LLM이 도구를 정확하게 호출하고, 못 쓰면 엉뚱한 도구를 선택합니다.</div>
+    </div>
+  </section>
+
+  <!-- 03. Resources -->
+  <div class="ph" id="resources">
+    <div class="ph-line"><span class="ph-num">03</span><span class="ph-title">Resources — 리소스 노출</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">리소스 정의</span></div>
+      <div class="lb">
+<pre># 정적 리소스
+@mcp.resource("config://app-settings")
+def get_settings() -> str:
+    """앱 설정을 반환합니다."""
+    return json.dumps({"version": "1.0", "env": "production"})
+
+# 동적 리소스 (URI 템플릿)
+@mcp.resource("db://table/{table_name}")
+def get_table_schema(table_name: str) -> str:
+    """테이블 스키마를 반환합니다."""
+    schema = db.get_schema(table_name)
+    return json.dumps(schema)</pre>
+      </div>
+    </div>
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>Tool vs Resource</strong> Tool은 "행동"(API 호출, DB 쿼리), Resource는 "데이터"(설정, 스키마, 문서). Tool은 LLM이 호출하고, Resource는 컨텍스트로 주입됩니다.</div>
+    </div>
+  </section>
+
+  <!-- 04. Prompts -->
+  <div class="ph" id="prompts">
+    <div class="ph-line"><span class="ph-num">04</span><span class="ph-title">Prompts — 프롬프트 템플릿</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">프롬프트 템플릿 정의</span></div>
+      <div class="lb">
+<pre>@mcp.prompt
+def analyze_stock(ticker: str) -> str:
+    """종목 분석 프롬프트"""
+    return f"""다음 종목을 분석해주세요:
+    - 종목코드: {ticker}
+    - get_stock_price 도구로 현재가 확인
+    - search_news 도구로 관련 뉴스 검색
+    - 종합 판단 제시"""</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05. 전송 모드 -->
+  <div class="ph" id="transport">
+    <div class="ph-line"><span class="ph-num">05</span><span class="ph-title">전송 모드 비교</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">3가지 전송 모드 비교</span>
+      <div class="mermaid">
+graph TD
+    subgraph STDIO["stdio"]
+        S_C["클라이언트"] -->|stdin/stdout| S_S["서버\n(서브프로세스)"]
+    end
+    subgraph SSE["SSE (Server-Sent Events)"]
+        E_C["클라이언트"] -->|"HTTP POST /messages"| E_S["서버"]
+        E_S -->|"SSE /sse"| E_C
+    end
+    subgraph HTTP["Streamable HTTP (최신)"]
+        H_C["클라이언트"] -->|"POST /mcp"| H_S["서버"]
+        H_S -->|"JSON or SSE"| H_C
+    end
+
+    style STDIO fill:#0d0f18,stroke:#30c880
+    style SSE fill:#0d0f18,stroke:#e09830
+    style HTTP fill:#0d0f18,stroke:#5a7af0
+      </div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>항목</th><th>stdio</th><th>SSE</th><th>Streamable HTTP</th></tr></thead>
+        <tbody>
+          <tr><td><strong>통신 방식</strong></td><td>stdin/stdout 파이프</td><td>HTTP POST + SSE 스트림 (2 엔드포인트)</td><td class="tg">단일 HTTP 엔드포인트 (/mcp)</td></tr>
+          <tr><td><strong>적합 환경</strong></td><td class="tg">로컬 데스크톱 앱</td><td>원격 서버 (레거시)</td><td class="tg">원격 서버 (최신 표준)</td></tr>
+          <tr><td><strong>성능</strong></td><td class="tg">최고 (네트워크 없음)</td><td>좋음</td><td>좋음</td></tr>
+          <tr><td><strong>수평 확장</strong></td><td class="tr">불가</td><td class="ty">제한적 (long-lived 연결)</td><td class="tg">가능 (stateless)</td></tr>
+          <tr><td><strong>호환성</strong></td><td>Claude Desktop 등</td><td class="ty">BIP 현재 사용 중</td><td class="tg">2026 최신 표준</td></tr>
+          <tr><td><strong>상태</strong></td><td>유지</td><td class="tr">Deprecated (→ Streamable HTTP)</td><td class="tg">권장</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>판단 기준</strong> 서버와 클라이언트가 같은 머신이면 <strong>stdio</strong>. 다른 머신(Docker, 클라우드)이면 <strong>Streamable HTTP</strong> (또는 레거시 환경에서 SSE). BIP는 Docker 구성이라 SSE 사용 중.</div>
+    </div>
+  </section>
+
+  <!-- 06. SSE 서버 -->
+  <div class="ph" id="sse">
+    <div class="ph-line"><span class="ph-num">06</span><span class="ph-title">SSE 서버 구성</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">SSE 모드 서버 실행</span></div>
+      <div class="lb">
+<pre>from fastmcp import FastMCP
+
+mcp = FastMCP(
+    name="my-tools",
+    host="0.0.0.0",  # 외부 접근 허용
+    port=8000,
+)
+
+@mcp.tool
+def my_tool(query: str) -> str:
+    """도구 설명"""
+    return f"결과: {query}"
+
+if __name__ == "__main__":
+    mcp.run(transport="sse")
+
+# 실행: python server.py
+# → http://0.0.0.0:8000/sse 에서 SSE 엔드포인트 노출</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">Streamable HTTP 모드 (최신)</span></div>
+      <div class="lb">
+<pre># Streamable HTTP는 단일 엔드포인트
+if __name__ == "__main__":
+    mcp.run(transport="streamable-http")
+
+# → http://0.0.0.0:8000/mcp 에서 단일 엔드포인트 노출
+# 클라이언트가 JSON 또는 SSE를 선택적으로 수신</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">CLI</span><span class="lb-title">CLI로 실행</span></div>
+      <div class="lb">
+<pre># stdio 모드 (기본)
+fastmcp run server.py
+
+# SSE 모드
+fastmcp run server.py --transport sse
+
+# Streamable HTTP
+fastmcp run server.py --transport streamable-http
+
+# 포트 지정
+fastmcp run server.py --transport sse --port 9000</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07. LangGraph 연동 -->
+  <div class="ph" id="langgraph">
+    <div class="ph-line"><span class="ph-num">07</span><span class="ph-title">LangGraph 연동</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">LangGraph ↔ MCP 연동 아키텍처</span>
+      <div class="mermaid">
+graph LR
+    LG["LangGraph Agent\ncreate_react_agent"] -->|langchain-mcp-adapters| CLIENT["MultiServerMCPClient"]
+    CLIENT -->|SSE| MCP1["MCP Server 1\nDB 도구"]
+    CLIENT -->|SSE| MCP2["MCP Server 2\nAPI 도구"]
+    CLIENT -->|stdio| MCP3["MCP Server 3\n로컬 도구"]
+
+    style LG fill:#1a2540,stroke:#5a7af0,color:#7a9aff
+    style CLIENT fill:#201810,stroke:#e09830,color:#f8b840
+    style MCP1 fill:#102820,stroke:#30c880,color:#50e898
+    style MCP2 fill:#102820,stroke:#30c880,color:#50e898
+    style MCP3 fill:#102820,stroke:#30c880,color:#50e898
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">MultiServerMCPClient로 연결</span></div>
+      <div class="lb">
+<pre>from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.prebuilt import create_react_agent
+from langchain_anthropic import ChatAnthropic
+
+# 여러 MCP 서버 동시 연결 (전송 모드 혼합 가능)
+mcp_client = MultiServerMCPClient({
+    "stock-tools": {
+        "url": "http://mcp-server:8000/sse",
+        "transport": "sse",
+    },
+    "local-tools": {
+        "command": "python",
+        "args": ["local_mcp.py"],
+        "transport": "stdio",
+    },
+})
+
+# MCP 도구를 LangChain 도구로 변환
+tools = await mcp_client.get_tools()
+print(f"로드된 도구: {len(tools)}개")
+
+# LangGraph 에이전트에 도구 등록
+llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
+agent = create_react_agent(llm, tools)
+
+# 실행
+result = await agent.ainvoke({
+    "messages": [{"role": "user",
+                  "content": "삼성전자 현재가 알려줘"}]
+})
+
+# 정리 (SSE 연결 해제)
+await mcp_client.close()</pre>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div class="cb"><strong>MultiServerMCPClient는 stateless</strong> 각 도구 호출마다 새 세션을 생성합니다. SSE 연결은 반드시 <code>mcp_client.close()</code>로 정리하세요. BIP에서는 try/finally로 보장.</div>
+    </div>
+
+    <div class="layer info">
+      <div class="lh"><span class="lb-badge">팁</span><span class="lb-title">전송 모드 혼합</span></div>
+      <div class="lb">
+        <p><code>MultiServerMCPClient</code>는 서버마다 다른 전송 모드를 지정할 수 있습니다. 원격 서버는 SSE, 로컬 도구는 stdio로 혼합하면 에이전트가 <strong>모든 도구를 동일하게</strong> 사용합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08. Client -->
+  <div class="ph" id="client">
+    <div class="ph-line"><span class="ph-num">08</span><span class="ph-title">FastMCP 클라이언트 (서버 없이 테스트)</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">FastMCP Client로 직접 호출</span></div>
+      <div class="lb">
+<pre>from fastmcp import Client
+
+# URL로 원격 서버 연결
+async with Client("http://localhost:8000/sse") as client:
+    # 도구 목록 조회
+    tools = await client.list_tools()
+    print(f"사용 가능한 도구: {[t.name for t in tools]}")
+
+    # 도구 호출
+    result = await client.call_tool(
+        "get_stock_price",
+        {"ticker": "005930"}
+    )
+    print(result)
+
+    # 리소스 조회
+    resource = await client.read_resource("config://app-settings")
+    print(resource)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09. Docker -->
+  <div class="ph" id="docker">
+    <div class="ph-line"><span class="ph-num">09</span><span class="ph-title">Docker 배포</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">DOCKERFILE</span><span class="lb-title">MCP 서버 Dockerfile</span></div>
+      <div class="lb">
+<pre>FROM python:3.13-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY *.py .
+
+EXPOSE 8000
+CMD ["python", "server.py"]</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">docker-compose.yml (에이전트 서버와 함께)</span></div>
+      <div class="lb">
+<pre>services:
+  mcp-server:
+    build: ./mcp-server
+    ports: ["8000:8000"]
+    environment:
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/db
+      - KIS_APP_KEY=${KIS_APP_KEY}      # 외부 API 키
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+
+  agent-server:
+    build: ./agent
+    ports: ["8100:8100"]
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:8000/sse
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on: [mcp-server]</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Inspector -->
+  <div class="ph" id="debug">
+    <div class="ph-line"><span class="ph-num">10</span><span class="ph-title">디버깅 & MCP Inspector</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">CLI</span><span class="lb-title">MCP Inspector 실행</span></div>
+      <div class="lb">
+<pre># Inspector 실행 (웹 UI 자동 열림)
+fastmcp dev server.py
+
+# → http://127.0.0.1:6274 에서 웹 인터페이스
+# - Connect 클릭
+# - Tools 탭: 등록된 도구 목록 + 테스트
+# - Resources 탭: 리소스 조회 테스트
+# - Prompts 탭: 프롬프트 테스트</pre>
+      </div>
+    </div>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>Inspector는 개발 필수 도구</strong> 도구를 만들 때마다 Inspector에서 먼저 테스트하세요. 스키마가 의도대로 생성되었는지, 응답 형식이 맞는지 시각적으로 확인 가능.</div>
+    </div>
+  </section>
+
+  <!-- 11. 설계 패턴 -->
+  <div class="ph" id="patterns">
+    <div class="ph-line"><span class="ph-num">11</span><span class="ph-title">MCP 서버 설계 패턴</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="concept-grid">
+      <div class="concept-card cc-green">
+        <div class="cc-label">패턴 A</div>
+        <div class="cc-title">단일 서버 — 모든 도구를 하나에</div>
+        <div class="cc-desc">소규모 프로젝트, 도구 10~20개. 배포 단순. BIP 초기에 이 패턴.</div>
+      </div>
+      <div class="concept-card cc-blue">
+        <div class="cc-label">패턴 B</div>
+        <div class="cc-title">도메인별 분리 — 서버 여러 개</div>
+        <div class="cc-desc">DB 도구 서버 + API 도구 서버 + 검색 서버. 독립 스케일링 가능.</div>
+      </div>
+      <div class="concept-card cc-amber">
+        <div class="cc-label">패턴 C</div>
+        <div class="cc-title">모듈 분리 + 단일 서버</div>
+        <div class="cc-desc">파일은 분리(db.py, api.py)하지만 하나의 FastMCP에 등록. BIP 현재 패턴.</div>
+      </div>
+      <div class="concept-card cc-purple">
+        <div class="cc-label">패턴 D</div>
+        <div class="cc-title">Gateway 패턴</div>
+        <div class="cc-desc">MCP 서버가 FastAPI 뒤에 위치. 인증/로깅을 API Gateway에서 처리.</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>BIP의 선택: 패턴 C</strong> 7개 파일(server.py, realtime.py, db.py, dart.py, krx.py, news.py, context.py)로 모듈 분리하되, 하나의 FastMCP 인스턴스에 44개 도구 등록. 배포는 Docker 컨테이너 1개.</div>
+    </div>
+  </section>
+
+  <!-- 12. BIP 사례 -->
+  <div class="ph" id="bip">
+    <div class="ph-line"><span class="ph-num">12</span><span class="ph-title">BIP MCP 서버 실전 사례</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <h2 class="sec-title">bip-stock-mcp — 44개 도구의 실제 구성</h2>
+
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">BIP MCP 서버 내부 구조</span>
+      <div class="mermaid">
+graph TD
+    MCP["FastMCP\nbip-stock-mcp"] --> SV["server.py\n도구 등록 (44개)"]
+    SV --> RT["realtime.py\n한투 API\n시세/수급/예상체결"]
+    SV --> DB_M["db.py\nPostgreSQL\n투자자동향/반도체/지표"]
+    SV --> DART["dart.py\nDART API\n공시/재무제표"]
+    SV --> KRX["krx.py\nKRX\n거래정보/지수"]
+    SV --> NEWS["news.py\n네이버/웹\n뉴스 검색"]
+    SV --> CTX["context.py\nget_indicator_context\n90일 통계"]
+
+    style MCP fill:#201810,stroke:#e09830,color:#f8b840
+    style RT fill:#102820,stroke:#30c880,color:#50e898
+    style DB_M fill:#1a2540,stroke:#5a7af0,color:#7a9aff
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">BIP server.py 실제 구조</span></div>
+      <div class="lb">
+<pre>from fastmcp import FastMCP
+
+# 모듈에서 함수 import
+from realtime import (
+    get_realtime_stock_price, get_realtime_index,
+    get_realtime_investor, get_preopen_price, ...
+)
+from db import fetch_investor_flow, fetch_semiconductor_prices
+from dart import get_disclosure_list, get_financial_statement
+from news import search_naver_news, search_web
+from context import get_indicator_context
+
+mcp = FastMCP(
+    name="bip-stock-mcp",
+    host="0.0.0.0",
+    port=8000,
+)
+
+# 실시간 시세 (한투 API)
+@mcp.tool
+async def realtime_stock_price(code: str) -> dict:
+    """종목 현재가 조회 (한투 API, 6자리 코드)."""
+    return await get_realtime_stock_price(code)
+
+@mcp.tool
+async def realtime_index(index_name: str = "KOSPI") -> dict:
+    """KOSPI/KOSDAQ 지수 조회."""
+    return await get_realtime_index(index_name)
+
+# ... 44개 도구 등록
+
+if __name__ == "__main__":
+    mcp.run(transport="sse")</pre>
+      </div>
+    </div>
+
+    <h3>도구 카테고리별 분포</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>카테고리</th><th>파일</th><th>도구 수</th><th>데이터 소스</th></tr></thead>
+        <tbody>
+          <tr><td class="tg"><strong>실시간 시세</strong></td><td>realtime.py</td><td>11</td><td>한투 API (KIS)</td></tr>
+          <tr><td class="tb"><strong>DB 조회</strong></td><td>db.py</td><td>8</td><td>PostgreSQL</td></tr>
+          <tr><td class="ty"><strong>공시/재무</strong></td><td>dart.py</td><td>5</td><td>DART API</td></tr>
+          <tr><td class="tp"><strong>거래 정보</strong></td><td>krx.py</td><td>4</td><td>KRX</td></tr>
+          <tr><td><strong>뉴스 검색</strong></td><td>news.py</td><td>3</td><td>네이버/웹</td></tr>
+          <tr><td class="tg"><strong>지표 맥락</strong></td><td>context.py</td><td>1</td><td>DB (90일 통계)</td></tr>
+          <tr><td><strong>글로벌</strong></td><td>realtime.py</td><td>6</td><td>yfinance, Upbit</td></tr>
+          <tr><td><strong>장전 분석</strong></td><td>realtime.py</td><td>3</td><td>한투 API</td></tr>
+          <tr><td><strong>섹터</strong></td><td>realtime.py</td><td>3</td><td>KRX/DB</td></tr>
+          <tr><td colspan="2"><strong>합계</strong></td><td class="ty"><strong>44개</strong></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>BIP 운영 팁</strong>
+        <ul>
+          <li>외부 API 토큰은 <strong>파일 캐시</strong>로 컨테이너 재시작 대비 (한투 KIS 토큰 22시간 유효)</li>
+          <li>각 도구는 <strong>자체 에러 핸들링</strong> — API 실패 시 <code>{"error": "..."}</code> 반환, 서버 전체 크래시 방지</li>
+          <li>도구 이름은 <strong>LLM이 이해하기 쉽게</strong> — <code>realtime_stock_price</code>, <code>night_futures_ewy</code></li>
+          <li>비동기 함수(<code>async def</code>) 필수 — I/O 바운드 작업이 대부분이라 동시 호출 성능</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. 참고 -->
+  <div class="ph" id="refs">
+    <div class="ph-line"><span class="ph-num">13</span><span class="ph-title">참고 자료</span></div>
+    <div class="ph-div"></div>
+  </div>
+
+  <section class="sec">
+    <div class="ref-item"><a href="https://github.com/jlowin/fastmcp" target="_blank">GitHub — FastMCP</a> (24.5K stars, Apache 2.0)</div>
+    <div class="ref-item"><a href="https://gofastmcp.com" target="_blank">FastMCP 공식 문서</a></div>
+    <div class="ref-item"><a href="https://modelcontextprotocol.io" target="_blank">MCP 공식 사이트 (Anthropic)</a></div>
+    <div class="ref-item"><a href="https://github.com/langchain-ai/langchain-mcp-adapters" target="_blank">langchain-mcp-adapters (LangChain ↔ MCP)</a></div>
+    <div class="ref-item"><a href="https://mcpcat.io/guides/comparing-stdio-sse-streamablehttp/" target="_blank">MCP 전송 프로토콜 비교 (MCPcat)</a></div>
+    <div class="ref-item"><a href="https://medium.com/@anoopninangeorge/building-a-remote-mcp-server-a-mcp-client-with-fastmcp-langchain-langgraph-17cf0e8d043b" target="_blank">FastMCP + LangGraph 원격 서버 구축 (Medium)</a></div>
+    <div class="ref-item"><a href="https://www.firecrawl.dev/blog/fastmcp-tutorial-building-mcp-servers-python" target="_blank">FastMCP 튜토리얼 (Firecrawl)</a></div>
+    <div class="ref-item"><a href="langgraph_technical_guide.html">LangGraph 기술 가이드</a></div>
+    <div class="ref-item"><a href="langgraph_enterprise_guide.html">LangGraph 사내 환경 구축 가이드</a></div>
+  </section>
+
+</main>
+</div>
+
+<footer>
+  <p>fastmcp.guide · v3.2 기준 · 2026.04.14</p>
+  <p>Apache 2.0 · Prefect / Anthropic MCP</p>
+</footer>
+
+<script>
+mermaid.initialize({startOnLoad:true,theme:'base',themeVariables:{primaryColor:'#1a2540',primaryTextColor:'#d4daf0',primaryBorderColor:'#2c3450',lineColor:'#e09830',secondaryColor:'#10121a',tertiaryColor:'#161920',background:'#0b0d12',mainBkg:'#1a2540',nodeBorder:'#2c3450',clusterBkg:'#0d0f18',clusterBorder:'#2c3450',edgeLabelBackground:'#0d0f18',titleColor:'#f8b840',nodeTextColor:'#d4daf0',labelTextColor:'#d4daf0',fontFamily:'JetBrains Mono, monospace',fontSize:'13px'}});
+const secs=document.querySelectorAll('.sec,.ph,.hero');const nas=document.querySelectorAll('.na');
+const obs=new IntersectionObserver(e=>{e.forEach(e=>{if(e.isIntersecting){nas.forEach(n=>n.classList.remove('active'));const a=document.querySelector(`.na[href="#${e.target.id}"]`);if(a)a.classList.add('active')}})},{rootMargin:'-15% 0px -75% 0px'});
+secs.forEach(s=>{if(s.id)obs.observe(s)});nas.forEach(n=>{n.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(n.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})})});
+</script>
+
+</body>
+</html>
