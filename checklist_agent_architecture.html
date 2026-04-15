@@ -148,15 +148,17 @@ graph TD
 
 <div class="mermaid">
 graph TD
-    LLM["모닝리포트 LLM<br/>(Sonnet)"] -->|체크리스트 생성| RB["report_builder.py<br/>extract_checklist()"]
-    RB -->|직접 저장<br/>HTML 파싱 불필요| DB[(monitor_checklist<br/>테이블)]
-    RB -->|HTML 렌더링| EMAIL[이메일 발송<br/>섹션별 그룹핑]
+    LLM["모닝리포트 LLM\nSonnet"] -->|체크리스트 생성| RB["report_builder.py\nextract_checklist"]
+    RB -->|직접 저장| DB[(monitor_checklist\n테이블)]
+    RB -->|HTML 렌더링| EMAIL["이메일 발송"]
 
-    DB -->|load_checklist()| PARSE_DAG["08:25 DAG<br/>장전 분석"]
-    DB -->|load_checklist()| INTRA_DAG["09:30~14:30 DAG<br/>정기 현황"]
-    DB -->|load_checklist()| CLOSE_DAG["15:35 DAG<br/>장마감 복기"]
+    DB -->|load_checklist| PARSE_DAG["08:25 DAG\n장전 분석"]
+    DB -->|load_checklist| INTRA_DAG["09:30~14:30 DAG\n정기 현황"]
+    DB -->|load_checklist| CLOSE_DAG["15:35 DAG\n장마감 복기"]
 
-    PARSE_DAG & INTRA_DAG & CLOSE_DAG -->|POST /api/checklist/analyze| AGENT["Haiku 에이전트"]
+    PARSE_DAG --> AGENT["Haiku 에이전트"]
+    INTRA_DAG --> AGENT
+    CLOSE_DAG --> AGENT
     AGENT --> TELEGRAM["텔레그램 발송"]
 
     style LLM fill:#f3e8ff,stroke:#7c3aed
@@ -171,28 +173,25 @@ graph TD
 
 <div class="mermaid">
 gantt
-    title 평일 발송 타임라인 (KST)
+    title 평일 발송 타임라인 KST
     dateFormat HH:mm
     axisFormat %H:%M
 
     section 모닝리포트
-    모닝리포트 생성+발송 (Sonnet)    :08:10, 6min
-    Sonnet/GPT 테스트 (중지)          :08:20, 10min
+    모닝리포트 생성 발송 Sonnet       :08:10, 6min
 
     section 체크리스트
-    체크리스트 파싱+장전 분석         :08:25, 2min
+    체크리스트 파싱 장전 분석          :08:25, 2min
     Preopen 예상 체결가               :08:40, 2min
 
     section 장중
-    장 시작                           :milestone, 09:00, 0min
-    정기현황 09:30                    :09:30, 2min
-    정기현황 10:00                    :10:00, 2min
-    이상치 감지 (10분 주기)           :09:10, 390min
-    정기현황 12:00                    :12:00, 2min
-    정기현황 14:30                    :14:30, 2min
+    정기현황 0930                     :09:30, 2min
+    정기현황 1000                     :10:00, 2min
+    이상치 감지 10분 주기             :09:10, 390min
+    정기현황 1200                     :12:00, 2min
+    정기현황 1430                     :14:30, 2min
 
     section 마감
-    장 마감                           :milestone, 15:30, 0min
     장마감 종합점검                   :15:35, 3min
 </div>
 
@@ -447,7 +446,8 @@ graph TD
     DAG_R --> RB --> LLM_A
     AP --> CM --> CA
     CA --> SV
-    SV --> RT & CTX
+    SV --> RT
+    SV --> CTX
 
     style Pipeline fill:#f0fdf4,stroke:#059669
     style Agents fill:#faf5ff,stroke:#7c3aed
