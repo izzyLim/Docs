@@ -103,8 +103,10 @@
       A[Haiku + MCP 44개] -->|도구 직접 선택| R[결과]
     end
 
-    Phase2 -.->|취약: 형식 변경 시 파싱 실패<br/>새 항목마다 코드 수정 필요| X[문제]
-    Phase5 -.->|유연: 형식 무관<br/>새 항목 자동 대응| O[해결]
+    Phase2 -.->|취약: 형식 변경 시 파싱 실패
+새 항목마다 코드 수정 필요| X[문제]
+    Phase5 -.->|유연: 형식 무관
+새 항목 자동 대응| O[해결]
 
     style Phase2 fill:#fee2e2,stroke:#dc2626
     style Phase5 fill:#d1fae5,stroke:#059669
@@ -118,24 +120,36 @@
 
 <div class="mermaid">
 graph TD
-    DAG[Airflow DAG<br/>market_monitor_*] -->|HTTP POST| API[BIP-Agents API<br/>/api/checklist/analyze]
-    API --> AGENT[checklist_agent.py<br/>run_checklist_agent]
-    AGENT --> REACT["create_react_agent<br/>(Haiku + MCP 44개)"]
+    DAG[Airflow DAG
+market_monitor_*] -->|HTTP POST| API[BIP-Agents API
+/api/checklist/analyze]
+    API --> AGENT[checklist_agent.py
+run_checklist_agent]
+    AGENT --> REACT["create_react_agent
+(Haiku + MCP 44개)"]
 
-    REACT -->|도구 선택| MCP["MCP 서버<br/>(bip-stock-mcp)"]
+    REACT -->|도구 선택| MCP["MCP 서버
+(bip-stock-mcp)"]
 
     subgraph tools["사용 가능한 도구 (일부)"]
-        T1[realtime_index<br/>KOSPI/KOSDAQ]
-        T2[realtime_fx_rate<br/>원/달러]
-        T3[realtime_stock_price<br/>종목 현재가]
-        T4[night_futures_ewy<br/>EWY 야간선물]
-        T5[news_search_naver<br/>뉴스 검색]
-        T6[realtime_investor<br/>수급]
+        T1[realtime_index
+KOSPI/KOSDAQ]
+        T2[realtime_fx_rate
+원/달러]
+        T3[realtime_stock_price
+종목 현재가]
+        T4[night_futures_ewy
+EWY 야간선물]
+        T5[news_search_naver
+뉴스 검색]
+        T6[realtime_investor
+수급]
     end
 
     MCP --> tools
     REACT --> MSG[텔레그램 메시지 생성]
-    MSG --> TG[텔레그램 발송<br/>채널 + DM]
+    MSG --> TG[텔레그램 발송
+채널 + DM]
 
     style REACT fill:#f3e8ff,stroke:#7c3aed
     style MCP fill:#dbeafe,stroke:#2563eb
@@ -221,7 +235,8 @@ graph LR
         Q3["SK하이닉스 850,000원?"] --> T3["realtime_stock_price"]
         Q4["EWY 갭 예측?"] --> T4["night_futures_ewy"]
         Q5["이란 협상 뉴스?"] --> T5["news_search_naver"]
-        Q6["WTI $120 돌파?"] --> T6["get_indicator_context<br/>(commodity_oil)"]
+        Q6["WTI $120 돌파?"] --> T6["get_indicator_context
+(commodity_oil)"]
     end
 
     style LLM_Choice fill:#faf5ff,stroke:#7c3aed
@@ -291,10 +306,24 @@ SK하이닉스 xxx원 (+x.x%)
 
 <div class="mermaid">
 graph TD
-    LLM_OUT["Sonnet 출력<br/>□ 장 시작 전<br/>- 항목1<br/>- 항목2<br/>□ 장 중 모니터링<br/>..."] --> EXTRACT["extract_checklist()<br/>체크리스트 섹션 추출"]
-    EXTRACT --> PARSE["고정 섹션 감지<br/>장 시작 전 / 장 중 / 주의 가격 레벨"]
-    PARSE --> HTML["HTML 그룹핑<br/>🌅 장 시작 전<br/>☐ 항목<br/>📊 장 중<br/>☐ 항목<br/>⚠️ 주의 레벨<br/>☐ 항목"]
-    HTML --> EMAIL["이메일 템플릿<br/>morning_report.html"]
+    LLM_OUT["Sonnet 출력
+□ 장 시작 전
+- 항목1
+- 항목2
+□ 장 중 모니터링
+..."] --> EXTRACT["extract_checklist()
+체크리스트 섹션 추출"]
+    EXTRACT --> PARSE["고정 섹션 감지
+장 시작 전 / 장 중 / 주의 가격 레벨"]
+    PARSE --> HTML["HTML 그룹핑
+🌅 장 시작 전
+☐ 항목
+📊 장 중
+☐ 항목
+⚠️ 주의 레벨
+☐ 항목"]
+    HTML --> EMAIL["이메일 템플릿
+morning_report.html"]
 
     style LLM_OUT fill:#f3e8ff,stroke:#7c3aed
     style HTML fill:#d1fae5,stroke:#059669
@@ -340,17 +369,36 @@ graph TD
 
 <div class="mermaid">
 graph LR
-    P1["Phase 1<br/>4/5<br/>get_indicator_context"] --> P2["Phase 2<br/>4/5<br/>4단계 파이프라인"]
-    P2 --> P3["Phase 3<br/>4/5<br/>snapshot 테이블"]
-    P3 --> P4["Phase 4<br/>4/5<br/>preopen DAG"]
-    P4 --> P5["Phase 5<br/>4/6<br/>LLM 직접 호출"]
-    P5 --> P5_1["5-1<br/>DB 저장 변경"]
-    P5_1 --> P5_2["5-2<br/>프롬프트 간소화"]
-    P5_2 --> P5_3["5-3<br/>시간대별 분리"]
-    P5_3 --> P5_4["5-4<br/>Sonnet 전환<br/>체크리스트 그룹핑"]
-    P5_4 --> P6["Phase 6<br/>4/11<br/>가독성 전면 개선"]
-    P6 --> P6_1["6-1<br/>preopen API 교체"]
-    P6_1 --> P6_2["6-2<br/>실시간 스냅샷 강화"]
+    P1["Phase 1
+4/5
+get_indicator_context"] --> P2["Phase 2
+4/5
+4단계 파이프라인"]
+    P2 --> P3["Phase 3
+4/5
+snapshot 테이블"]
+    P3 --> P4["Phase 4
+4/5
+preopen DAG"]
+    P4 --> P5["Phase 5
+4/6
+LLM 직접 호출"]
+    P5 --> P5_1["5-1
+DB 저장 변경"]
+    P5_1 --> P5_2["5-2
+프롬프트 간소화"]
+    P5_2 --> P5_3["5-3
+시간대별 분리"]
+    P5_3 --> P5_4["5-4
+Sonnet 전환
+체크리스트 그룹핑"]
+    P5_4 --> P6["Phase 6
+4/11
+가독성 전면 개선"]
+    P6 --> P6_1["6-1
+preopen API 교체"]
+    P6_1 --> P6_2["6-2
+실시간 스냅샷 강화"]
 
     style P2 fill:#fee2e2,stroke:#dc2626
     style P5 fill:#d1fae5,stroke:#059669
@@ -421,25 +469,38 @@ graph LR
 <div class="mermaid">
 graph TD
     subgraph Pipeline["BIP-Pipeline (Airflow)"]
-        DAG_M["dag_market_monitor.py<br/>DAG 4개"]
-        DAG_R["dag_morning_report.py<br/>모닝리포트"]
-        MM["market_monitor.py<br/>발송 로직"]
-        RB["report_builder.py<br/>체크리스트 추출+저장"]
-        LLM_A["llm_analyzer_v2.py<br/>LLM 프롬프트"]
-        TPL["morning_report.html<br/>이메일 템플릿"]
+        DAG_M["dag_market_monitor.py
+DAG 4개"]
+        DAG_R["dag_morning_report.py
+모닝리포트"]
+        MM["market_monitor.py
+발송 로직"]
+        RB["report_builder.py
+체크리스트 추출+저장"]
+        LLM_A["llm_analyzer_v2.py
+LLM 프롬프트"]
+        TPL["morning_report.html
+이메일 템플릿"]
     end
 
     subgraph Agents["BIP-Agents"]
-        CA["checklist_agent.py<br/>Haiku ReAct 에이전트"]
-        CM["checklist_main.py<br/>진입점"]
-        AP["api.py<br/>FastAPI"]
-        PA["preopen_analyzer.py<br/>08:40 분석"]
+        CA["checklist_agent.py
+Haiku ReAct 에이전트"]
+        CM["checklist_main.py
+진입점"]
+        AP["api.py
+FastAPI"]
+        PA["preopen_analyzer.py
+08:40 분석"]
     end
 
     subgraph MCP["MCP 서버"]
-        SV["server.py<br/>도구 44개"]
-        RT["realtime.py<br/>한투/Upbit/yfinance"]
-        CTX["context.py<br/>get_indicator_context"]
+        SV["server.py
+도구 44개"]
+        RT["realtime.py
+한투/Upbit/yfinance"]
+        CTX["context.py
+get_indicator_context"]
     end
 
     DAG_M --> MM --> AP
