@@ -135,7 +135,7 @@
 <body>
   <main class="container">
     <h1>Docs</h1>
-    <p class="subtitle">기술 가이드 & 아키텍처 문서 모음 — 17개</p>
+    <p class="subtitle">기술 가이드 & 아키텍처 문서 모음 — 19개</p>
 
     <div class="controls">
       <button onclick="document.querySelectorAll('details').forEach(d=>d.open=true)">전체 펼치기</button>
@@ -144,7 +144,7 @@
 
     <!-- AI 에이전트 프레임워크 -->
     <details open>
-      <summary>AI 에이전트 프레임워크 & 설계 <span class="badge">5</span></summary>
+      <summary>AI 에이전트 프레임워크 & 설계 <span class="badge">8</span></summary>
       <ul>
         <li><a class="card" href="hermes_agent_research.html">
           <span class="card-title">Hermes Agent 조사</span>
@@ -256,6 +256,18 @@
           <span class="card-title">사내 적용 플레이북</span>
           <span class="card-sep">—</span>
           <span class="card-desc">엔터프라이즈 도입 가이드</span>
+        </a></li>
+      </ul>
+    </details>
+
+    <!-- 보안 & 권한 -->
+    <details open>
+      <summary>보안 & 권한 설계 <span class="badge">1</span></summary>
+      <ul>
+        <li><a class="card" href="enterprise_chatbot_permission_design.html">
+          <span class="card-title">사내 LLM 챗봇 권한 제어 설계</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">Java Spring 하이브리드 + JWT 전파 + NL2SQL/RAG/MCP 권한 일원화</span>
         </a></li>
       </ul>
     </details>
