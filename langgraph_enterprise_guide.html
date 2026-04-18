@@ -109,7 +109,7 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
 
 <header class="hdr">
   <span class="logo"><em>LangGraph</em> 사내 환경 구축 가이드</span>
-  <span class="vtag">Step-by-Step · 2026.04</span>
+  <span class="vtag">Step-by-Step · v2.0 · 2026.04</span>
 </header>
 
 <div class="layout">
@@ -129,15 +129,15 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
   </div>
   <div class="ng">
     <div class="nl">인프라 구축</div>
-    <a class="na" href="#checkpointer"><span class="nn">06</span>PostgreSQL 체크포인터</a>
+    <a class="na" href="#checkpointer"><span class="nn">06</span>체크포인터 (PG / Oracle)</a>
     <a class="na" href="#mcp"><span class="nn">07</span>MCP 서버 구축</a>
     <a class="na" href="#fastapi"><span class="nn">08</span>FastAPI 에이전트 서버</a>
   </div>
   <div class="ng">
     <div class="nl">배포 & 운영</div>
-    <a class="na" href="#docker"><span class="nn">09</span>Docker 컨테이너화</a>
+    <a class="na" href="#docker"><span class="nn">09</span>Docker & Multi-VM HA</a>
     <a class="na" href="#airflow"><span class="nn">10</span>Airflow 스케줄링 연동</a>
-    <a class="na" href="#langsmith"><span class="nn">11</span>LangSmith 모니터링</a>
+    <a class="na" href="#monitoring"><span class="nn">11</span>모니터링 (LangFuse)</a>
   </div>
   <div class="ng">
     <div class="nl">보안 & 트러블슈팅</div>
@@ -158,57 +158,140 @@ footer p{font-size:12px;color:var(--dim);font-family:var(--mono)}
   <section class="hero" id="intro">
     <div class="hero-eye">Enterprise Setup · Step-by-Step Guide</div>
     <h1>LangGraph<br><span>사내 환경 구축</span></h1>
-    <p class="hero-desc">Python 환경 설정부터 PostgreSQL 체크포인터, MCP 서버, FastAPI 에이전트 서버, Docker 배포, Airflow 연동, LangSmith 모니터링까지 — 사내에 LangGraph 기반 에이전트 시스템을 처음부터 구축하는 전 과정.</p>
+    <p class="hero-desc">Python 환경 설정부터 체크포인터(PostgreSQL/Oracle RAC), MCP 서버, FastAPI 에이전트 서버, Multi-VM Docker HA 배포, Airflow 연동, LangFuse 모니터링까지 — 사내 폐쇄망에 LangGraph 기반 에이전트 시스템을 처음부터 구축하는 전 과정.</p>
     <div class="meta-pills">
       <span class="mp mp-g">Python 3.11+</span>
-      <span class="mp mp-b">PostgreSQL</span>
-      <span class="mp mp-a">Docker</span>
+      <span class="mp mp-b">PostgreSQL / Oracle RAC</span>
+      <span class="mp mp-a">Docker + Multi-VM HA</span>
       <span class="mp mp-p">FastAPI</span>
       <span class="mp mp-g">MCP</span>
-      <span class="mp mp-b">LangSmith</span>
+      <span class="mp mp-b">LangFuse (Self-hosted)</span>
     </div>
   </section>
 
   <section class="sec">
     <h2 class="sec-title">최종 목표 아키텍처</h2>
     <div class="mermaid-wrap">
-      <span class="mermaid-label">사내 LangGraph 환경 전체 구성도</span>
+      <span class="mermaid-label">사내 프로덕션 환경 전체 구성도 (Multi-VM + Oracle RAC + LangFuse)</span>
       <div class="mermaid">
 graph TD
     subgraph Client["클라이언트"]
-        WEB["웹 채팅 UI"]
+        SPRING["Spring Boot\n기존 웹 시스템"]
         TG["텔레그램"]
         AF["Airflow DAG"]
     end
-    subgraph Server["에이전트 서버 (Docker)"]
+
+    subgraph LB_LAYER["로드 밸런서"]
+        LB["L4 Load Balancer\nF5 / HAProxy\n(VIP)"]
+    end
+
+    subgraph VM1["VM-1 (Docker)"]
+        W1A["Worker 1a"]
+        W1B["Worker 1b"]
+    end
+    subgraph VM2["VM-2 (Docker)"]
+        W2A["Worker 2a"]
+        W2B["Worker 2b"]
+    end
+    subgraph VM3["VM-3 (Docker)"]
+        W3A["Worker 3a"]
+        W3B["Worker 3b"]
+    end
+
+    subgraph Worker_Detail["Worker 내부 구조"]
         FAST["FastAPI\nHTTP/WebSocket"]
         LG["LangGraph\n에이전트 그래프"]
-        TOOLS["도구 (Tools)\n@tool 데코레이터"]
+        TOOLS["로컬 도구\n@tool"]
+        MCP_C["MCP Client"]
     end
+
     subgraph MCP_S["MCP 서버 (Docker)"]
-        MCP_T["MCP 도구\n(외부 API 래핑)"]
+        MCP_T["MCP 도구\n외부 API 래핑"]
     end
-    subgraph Infra["인프라"]
-        PG["PostgreSQL\n체크포인터 + 데이터"]
-        REDIS["Redis (선택)\n캐싱"]
+
+    subgraph DB_LAYER["데이터 계층"]
+        SCAN["SCAN Listener\n단일 진입점"]
+        subgraph RAC["Oracle Exadata RAC"]
+            NODE1["RAC Node 1\nActive"]
+            NODE2["RAC Node 2\nActive"]
+        end
+        ASM["ASM\n공유 스토리지"]
     end
+
     subgraph Monitor["모니터링"]
-        LS["LangSmith\n트레이싱"]
-        AUDIT["감사 로그\n(DB 테이블)"]
+        FUSE["LangFuse\nSelf-hosted\n트레이싱 UI"]
+        GRAF["Grafana\n인프라 메트릭"]
+        AUDIT["감사 로그\nagent_audit_log"]
     end
 
-    Client --> FAST
-    FAST --> LG
-    LG --> TOOLS & MCP_T
-    LG --> PG
-    MCP_T --> PG
-    LG -.-> LS & AUDIT
+    Client --> LB
+    LB --> VM1
+    LB --> VM2
+    LB --> VM3
 
-    style Server fill:#0d0f18,stroke:#30c880
+    FAST --> LG
+    LG --> TOOLS
+    LG --> MCP_C
+    MCP_C --> MCP_T
+
+    W1A & W1B & W2A & W2B & W3A & W3B --> SCAN
+    MCP_T --> SCAN
+    SCAN --> NODE1
+    SCAN --> NODE2
+    NODE1 --> ASM
+    NODE2 --> ASM
+
+    LG -.->|callback| FUSE
+    LG -.-> AUDIT
+    VM1 & VM2 & VM3 -.->|metrics| GRAF
+
+    style LB_LAYER fill:#0d0f18,stroke:#f05050,color:#f08080
+    style VM1 fill:#0d0f18,stroke:#30c880
+    style VM2 fill:#0d0f18,stroke:#30c880
+    style VM3 fill:#0d0f18,stroke:#30c880
+    style Worker_Detail fill:#0d0f18,stroke:#5a7af0
     style MCP_S fill:#0d0f18,stroke:#5a7af0
-    style Infra fill:#0d0f18,stroke:#e09830
+    style DB_LAYER fill:#0d0f18,stroke:#e09830
+    style RAC fill:#101520,stroke:#e09830
     style Monitor fill:#0d0f18,stroke:#9060f0
       </div>
+    </div>
+
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">요청 흐름 시퀀스</span>
+      <div class="mermaid">
+sequenceDiagram
+    participant U as Spring Boot (사용자)
+    participant LB as Load Balancer
+    participant W as Worker (FastAPI)
+    participant LG as LangGraph
+    participant MCP as MCP 서버
+    participant ORA as Oracle RAC (SCAN)
+    participant LF as LangFuse
+
+    U->>LB: POST /api/ask (JWT 포함)
+    LB->>W: 라우팅 (health check 통과 Worker)
+    W->>LG: graph.ainvoke(state, config)
+    activate LG
+    LG->>ORA: Checkpoint 로드 (thread_id)
+    LG->>LG: router 노드 (분기 판단)
+    LG->>MCP: 도구 호출 (get_stock_price 등)
+    MCP->>ORA: SQL 조회
+    ORA-->>MCP: 결과
+    MCP-->>LG: 도구 결과
+    LG->>ORA: LLM 호출 (사내 API)
+    LG->>ORA: Checkpoint 저장
+    LG-->>W: 최종 응답
+    deactivate LG
+    W-->>LB: JSON 응답
+    LB-->>U: 응답 전달
+    W--)LF: 트레이스 비동기 전송
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>핵심 설계 원칙</strong> Worker는 완전 Stateless — 모든 상태는 Oracle RAC에 위임. 어떤 Worker가 요청을 받아도 동일하게 동작하므로, 장애 시 LB가 다른 Worker로 자동 라우팅.</div>
     </div>
   </section>
 
@@ -458,11 +541,24 @@ llm_gpt = ChatOpenAI(
 
   <!-- 06. PostgreSQL 체크포인터 -->
   <div class="ph" id="checkpointer">
-    <div class="ph-line"><span class="ph-num">06</span><span class="ph-title">PostgreSQL 체크포인터 설정</span></div>
+    <div class="ph-line"><span class="ph-num">06</span><span class="ph-title">체크포인터 설정 (PostgreSQL / Oracle RAC)</span></div>
     <div class="ph-div"></div>
   </div>
 
   <section class="sec">
+    <h3>옵션 비교</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>방안</th><th>장점</th><th>단점</th><th>권장 환경</th></tr></thead>
+        <tbody>
+          <tr><td class="tg"><strong>A. PostgreSQL (공식)</strong></td><td>공식 지원, setup() 자동 생성</td><td>별도 DB 인프라 필요</td><td>신규 구축, PoC</td></tr>
+          <tr><td class="tb"><strong>B. Oracle RAC (커스텀)</strong></td><td>기존 Exadata RAC 활용, 추가 인프라 없음</td><td>BaseCheckpointSaver 구현 필요 (4~5개 메서드)</td><td>사내 Oracle 있는 경우</td></tr>
+          <tr><td><strong>C. SQLite</strong></td><td>설치 불필요</td><td>단일 프로세스, HA 불가</td><td>로컬 개발 전용</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>A. PostgreSQL 체크포인터 (공식)</h3>
     <div class="mermaid-wrap">
       <span class="mermaid-label">체크포인터 DB 스키마 (자동 생성)</span>
       <div class="mermaid">
@@ -543,14 +639,171 @@ result = await app.ainvoke(input_state, config)</pre>
       <div class="cb"><strong>필수 설정</strong> <code>autocommit=True</code>와 <code>row_factory=dict_row</code>가 없으면 setup()이 실패하거나 조회 에러 발생. 가장 흔한 실수.</div>
     </div>
 
+    <h3>B. Oracle RAC 체크포인터 (커스텀)</h3>
+    <p style="color:var(--mid);margin-bottom:14px">기존 Oracle 19c Exadata RAC가 있는 사내 환경에서는 별도 PostgreSQL을 추가할 필요 없이 Custom Checkpointer로 기존 인프라를 활용.</p>
+
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">Oracle RAC Checkpointer 구조</span>
+      <div class="mermaid">
+graph LR
+    subgraph Workers["Stateless Workers"]
+        W1["Worker 1"]
+        W2["Worker 2"]
+        W3["Worker 3"]
+    end
+
+    subgraph Oracle["Oracle Exadata RAC"]
+        SCAN["SCAN Listener\n단일 DNS 진입점"]
+        N1["RAC Node 1\nActive"]
+        N2["RAC Node 2\nActive"]
+        ASM["ASM\n공유 스토리지"]
+    end
+
+    W1 -->|"oracledb\n(FAN event)"| SCAN
+    W2 --> SCAN
+    W3 --> SCAN
+    SCAN --> N1
+    SCAN --> N2
+    N1 --> ASM
+    N2 --> ASM
+
+    style Workers fill:#0d0f18,stroke:#30c880
+    style Oracle fill:#0d0f18,stroke:#e09830
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">SQL</span><span class="lb-title">Oracle 테이블 생성</span></div>
+      <div class="lb">
+<pre>-- Checkpoints (상태 저장)
+CREATE TABLE langgraph_checkpoints (
+    thread_id             VARCHAR2(128) NOT NULL,
+    checkpoint_ns         VARCHAR2(128) DEFAULT '' NOT NULL,
+    checkpoint_id         VARCHAR2(128) NOT NULL,
+    parent_checkpoint_id  VARCHAR2(128),
+    checkpoint_data       BLOB          NOT NULL,   -- JSON 직렬화
+    metadata              CLOB,
+    updated_at            TIMESTAMP DEFAULT SYSTIMESTAMP,
+    CONSTRAINT pk_lg_checkpoint
+        PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id)
+) TABLESPACE langgraph_data;
+
+-- Channel Writes (중간 상태)
+CREATE TABLE langgraph_writes (
+    thread_id       VARCHAR2(128) NOT NULL,
+    checkpoint_ns   VARCHAR2(128) DEFAULT '' NOT NULL,
+    checkpoint_id   VARCHAR2(128) NOT NULL,
+    task_id         VARCHAR2(128) NOT NULL,
+    idx             NUMBER(10)    NOT NULL,
+    channel         VARCHAR2(256) NOT NULL,
+    type            VARCHAR2(256),
+    blob_data       BLOB,
+    CONSTRAINT pk_lg_writes
+        PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id, task_id, idx)
+) TABLESPACE langgraph_data;
+
+-- 오래된 체크포인트 정리 (30일)
+-- DBMS_SCHEDULER 또는 interval partition 활용</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">OracleCheckpointSaver 구현</span></div>
+      <div class="lb">
+<pre>from langgraph.checkpoint.base import BaseCheckpointSaver
+import oracledb
+import json
+
+class OracleCheckpointSaver(BaseCheckpointSaver):
+    """Oracle 19c RAC용 Checkpointer"""
+
+    def __init__(self, dsn: str, user: str, password: str):
+        super().__init__()
+        self.pool = oracledb.create_pool(
+            dsn=dsn,           # SCAN DNS
+            user=user,
+            password=password,
+            min=5, max=20,
+            increment=2,
+            events=True,       # FAN 이벤트 수신 (RAC failover 감지)
+        )
+
+    def put(self, config, checkpoint, metadata, new_versions):
+        """체크포인트 저장 (MERGE = upsert)"""
+        thread_id = config["configurable"]["thread_id"]
+        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
+        checkpoint_id = checkpoint["id"]
+        parent_id = config["configurable"].get("checkpoint_id")
+
+        with self.pool.acquire() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    MERGE INTO langgraph_checkpoints t
+                    USING (SELECT :tid AS thread_id,
+                                  :ns  AS checkpoint_ns,
+                                  :cid AS checkpoint_id FROM dual) s
+                    ON (t.thread_id = s.thread_id
+                        AND t.checkpoint_ns = s.checkpoint_ns
+                        AND t.checkpoint_id = s.checkpoint_id)
+                    WHEN MATCHED THEN UPDATE SET
+                        checkpoint_data = :data,
+                        metadata = :meta,
+                        updated_at = SYSTIMESTAMP
+                    WHEN NOT MATCHED THEN INSERT
+                        (thread_id, checkpoint_ns, checkpoint_id,
+                         parent_checkpoint_id, checkpoint_data,
+                         metadata, updated_at)
+                    VALUES (:tid, :ns, :cid, :pid, :data,
+                            :meta, SYSTIMESTAMP)
+                """, {
+                    "tid": thread_id, "ns": checkpoint_ns,
+                    "cid": checkpoint_id, "pid": parent_id,
+                    "data": json.dumps(checkpoint).encode(),
+                    "meta": json.dumps(metadata),
+                })
+            conn.commit()
+
+    def get_tuple(self, config):
+        """thread_id + checkpoint_ns 기준 최신 checkpoint 조회"""
+        # ... SELECT + ORDER BY updated_at DESC FETCH FIRST 1 ROW
+
+    def list(self, config, *, filter=None, before=None, limit=10):
+        """checkpoint 이력 조회"""
+        # ... SELECT + pagination
+
+# 사용
+checkpointer = OracleCheckpointSaver(
+    dsn="(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)"
+        "(HOST=scan.internal)(PORT=1521))"
+        "(CONNECT_DATA=(SERVICE_NAME=CHATBOT)))",
+    user="langgraph_svc",
+    password=os.environ["ORACLE_PASSWORD"],
+)
+graph = workflow.compile(checkpointer=checkpointer)</pre>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div class="cb"><strong>RAC가 제공하는 HA</strong>
+        <ul style="margin:6px 0 0;padding-left:18px">
+          <li><strong>SCAN Listener</strong> — Worker는 단일 DNS로 연결, 노드 장애 시 자동 라우팅</li>
+          <li><strong>FAN 이벤트</strong> — <code>events=True</code>로 노드 다운 즉시 감지, 커넥션 풀 자동 정리</li>
+          <li><strong>Active-Active</strong> — 두 노드 모두 읽기/쓰기 가능, 별도 failover 대기 없음</li>
+          <li><strong>TAF</strong> — SELECT 중 노드 장애 시 다른 노드에서 자동 재실행</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>운영 공통</h3>
     <div class="layer amber">
       <div class="lh"><span class="lb-badge">운영</span><span class="lb-title">체크포인트 데이터 관리</span></div>
       <div class="lb">
         <ul>
           <li><strong>데이터 증가</strong> — 매 노드 실행마다 State 저장. 장기 운영 시 주기적 정리 필요</li>
-          <li><strong>정리 쿼리</strong>: <code>DELETE FROM checkpoints WHERE metadata->>'created_at' < NOW() - INTERVAL '30 days'</code></li>
+          <li><strong>정리</strong>: PostgreSQL <code>DELETE ... WHERE created_at < NOW() - INTERVAL '30 days'</code> / Oracle <code>DBMS_SCHEDULER</code> 또는 interval partition</li>
           <li><strong>스키마 변경</strong> — State TypedDict에 필드 추가 후 기존 체크포인트와 호환 안 될 수 있음. 마이그레이션 계획 필수</li>
-          <li><strong>커넥션 풀</strong> — 프로덕션에서 20+ 동시 연결 권장 (pgBouncer 또는 SQLAlchemy pool)</li>
+          <li><strong>커넥션 풀</strong> — PostgreSQL: pgBouncer 20+ / Oracle: oracledb pool <code>min=5, max=20</code></li>
         </ul>
       </div>
     </div>
@@ -771,11 +1024,12 @@ async def ask_stream(req: AskRequest):
 
   <!-- 09. Docker -->
   <div class="ph" id="docker">
-    <div class="ph-line"><span class="ph-num">09</span><span class="ph-title">Docker 컨테이너화</span></div>
+    <div class="ph-line"><span class="ph-num">09</span><span class="ph-title">Docker 컨테이너화 & Multi-VM HA 배포</span></div>
     <div class="ph-div"></div>
   </div>
 
   <section class="sec">
+    <h3>기본: 단일 서버 Docker Compose</h3>
     <div class="layer code">
       <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">Dockerfile</span></div>
       <div class="lb">
@@ -792,18 +1046,17 @@ CMD ["uvicorn", "app.main:app", \
       </div>
     </div>
     <div class="layer code">
-      <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">docker-compose.yml</span></div>
+      <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">docker-compose.yml (개발/PoC)</span></div>
       <div class="lb">
 <pre>services:
   agent-server:
     build: .
     ports: ["8100:8100"]
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_API_URL=https://llm-gateway.internal/v1
       - DATABASE_URL=postgresql://user:pass@postgres:5432/agentdb
       - MCP_SERVER_URL=http://mcp-server:8000/sse
-      - LANGSMITH_TRACING=true
-      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGFUSE_HOST=http://langfuse:3000
     depends_on: [postgres, mcp-server]
 
   mcp-server:
@@ -815,30 +1068,202 @@ CMD ["uvicorn", "app.main:app", \
   postgres:
     image: postgres:16
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=agentdb
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: agentdb
+    volumes: [pgdata:/var/lib/postgresql/data]
 
 volumes:
   pgdata:</pre>
       </div>
     </div>
+
+    <h3>프로덕션: Multi-VM HA 배포 (K8s 없이)</h3>
+    <p style="color:var(--mid);margin-bottom:14px">사내 K8s 클러스터를 활용하기 어려운 경우, VM 2~3대 + Docker Compose + 사내 L4 LB로 프로덕션 HA를 구성할 수 있습니다. 핵심은 <strong>Worker가 완전 Stateless</strong>이므로 어디서든 동일하게 동작한다는 점.</p>
+
+    <div class="mermaid-wrap">
+      <span class="mermaid-label">Multi-VM HA 배포 토폴로지</span>
+      <div class="mermaid">
+graph TD
+    subgraph LB["Load Balancer (F5 / HAProxy)"]
+        VIP["VIP: 10.x.x.100\nHealth Check: GET /health"]
+    end
+
+    subgraph VM1["VM-1 (10.x.x.1)"]
+        DC1["docker-compose"]
+        W1A["Worker 1a :8000"]
+        W1B["Worker 1b :8001"]
+        MCP1["MCP Server :9000"]
+    end
+
+    subgraph VM2["VM-2 (10.x.x.2)"]
+        DC2["docker-compose"]
+        W2A["Worker 2a :8000"]
+        W2B["Worker 2b :8001"]
+        MCP2["MCP Server :9000"]
+    end
+
+    subgraph VM3["VM-3 (10.x.x.3)"]
+        DC3["docker-compose"]
+        W3A["Worker 3a :8000"]
+        W3B["Worker 3b :8001"]
+        MCP3["MCP Server :9000"]
+    end
+
+    subgraph Monitoring["모니터링 VM"]
+        LF["LangFuse :3100"]
+        GF["Grafana :3000"]
+    end
+
+    VIP --> DC1
+    VIP --> DC2
+    VIP --> DC3
+    DC1 --> W1A
+    DC1 --> W1B
+    DC2 --> W2A
+    DC2 --> W2B
+    DC3 --> W3A
+    DC3 --> W3B
+
+    W1A & W2A & W3A -.-> LF
+
+    style LB fill:#0d0f18,stroke:#f05050,color:#f08080
+    style VM1 fill:#0d0f18,stroke:#30c880
+    style VM2 fill:#0d0f18,stroke:#30c880
+    style VM3 fill:#0d0f18,stroke:#30c880
+    style Monitoring fill:#0d0f18,stroke:#9060f0
+      </div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th></th><th>최소 (HA 최소 충족)</th><th>권장</th></tr></thead>
+        <tbody>
+          <tr><td><strong>VM 수</strong></td><td>2대</td><td>3대</td></tr>
+          <tr><td><strong>Worker / VM</strong></td><td>1~2개</td><td>2~4개 (CPU 코어 수 따라)</td></tr>
+          <tr><td><strong>총 Worker</strong></td><td>2~4개</td><td>6~12개</td></tr>
+          <tr><td><strong>LB</strong></td><td>사내 F5 활용</td><td>별도 HAProxy VM 2대 (Active-Standby)</td></tr>
+          <tr><td><strong>DB</strong></td><td colspan="2">기존 Oracle RAC 또는 PostgreSQL</td></tr>
+          <tr><td><strong>VM 스펙</strong></td><td>4 core / 8GB</td><td>8 core / 16GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="layer code">
-      <div class="lh"><span class="lb-badge">SHELL</span><span class="lb-title">실행</span></div>
+      <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">docker-compose.yml (각 VM에 동일 배포)</span></div>
       <div class="lb">
-<pre># 빌드 + 실행
-docker compose up -d
+<pre>services:
+  langgraph-worker:
+    image: registry.internal/langgraph-worker:latest
+    deploy:
+      replicas: 2                          # VM당 2개 Worker
+    restart: always
+    ports:
+      - "8000-8001:8000"
+    environment:
+      ORACLE_DSN: "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=scan.internal)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=CHATBOT)))"
+      ORACLE_USER: langgraph_svc
+      ORACLE_PASSWORD_FILE: /run/secrets/oracle_pw
+      LLM_API_URL: https://llm-gateway.internal/v1
+      LANGFUSE_HOST: http://langfuse.internal:3100
+      LANGFUSE_PUBLIC_KEY: pk-xxx
+      LANGFUSE_SECRET_KEY_FILE: /run/secrets/langfuse_sk
+      WORKER_CONCURRENCY: 20
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    secrets:
+      - oracle_pw
+      - langfuse_sk
 
-# 테스트
-curl -X POST http://localhost:8100/api/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "삼성전자 현재가 알려줘"}'
+  mcp-server:
+    image: registry.internal/mcp-server:latest
+    restart: always
+    ports: ["9000:9000"]
 
-# 로그 확인
-docker compose logs -f agent-server</pre>
+secrets:
+  oracle_pw:
+    file: /etc/secrets/oracle_pw.txt
+  langfuse_sk:
+    file: /etc/secrets/langfuse_sk.txt</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">HAPROXY</span><span class="lb-title">haproxy.cfg (상위 LB 설정)</span></div>
+      <div class="lb">
+<pre>frontend langgraph_front
+    bind *:443 ssl crt /etc/ssl/langgraph.pem
+    default_backend langgraph_workers
+
+backend langgraph_workers
+    balance roundrobin
+    option httpchk GET /health
+    http-check expect status 200
+
+    server vm1 10.x.x.1:80 check inter 5s fall 3 rise 2
+    server vm2 10.x.x.2:80 check inter 5s fall 3 rise 2
+    server vm3 10.x.x.3:80 check inter 5s fall 3 rise 2</pre>
+      </div>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">SHELL</span><span class="lb-title">순차 무중단 배포 스크립트</span></div>
+      <div class="lb">
+<pre>#!/bin/bash
+# deploy.sh — VM 순차 무중단 배포 (K8s rolling update 대체)
+SERVERS="vm1 vm2 vm3"
+IMAGE="registry.internal/langgraph-worker:${TAG}"
+
+for server in $SERVERS; do
+    echo "=== $server 배포 시작 ==="
+    # 1. LB에서 제외 (drain)
+    ssh lb "echo 'set server langgraph_workers/$server state drain' \
+        | socat stdio /var/run/haproxy.sock"
+    # 2. 기존 요청 완료 대기
+    sleep 30
+    # 3. 새 이미지 pull + 재시작
+    ssh $server "cd /opt/langgraph && \
+        docker compose pull && docker compose up -d --force-recreate"
+    # 4. Health check 통과 대기
+    for i in $(seq 1 30); do
+        ssh $server "curl -sf http://localhost:80/health" && break
+        sleep 2
+    done
+    # 5. LB 복귀
+    ssh lb "echo 'set server langgraph_workers/$server state ready' \
+        | socat stdio /var/run/haproxy.sock"
+    echo "=== $server 완료 ==="
+done</pre>
+      </div>
+    </div>
+
+    <h3>장애 대응 매트릭스</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>장애</th><th>영향</th><th>자동 대응</th></tr></thead>
+        <tbody>
+          <tr><td class="tr"><strong>Worker 1대 죽음</strong></td><td>해당 요청 실패</td><td>Docker restart: always + LB가 다른 VM으로 라우팅. Checkpointer 덕분에 중간 상태 복구 가능</td></tr>
+          <tr><td class="tr"><strong>VM 1대 다운</strong></td><td>해당 VM의 Worker 전체 중단</td><td>LB health check 실패 → 자동 제외. 나머지 VM이 처리</td></tr>
+          <tr><td class="ty"><strong>Oracle Node 다운</strong></td><td>순간 커넥션 끊김</td><td>FAN 이벤트로 자동 감지 → SCAN이 살아있는 노드로 라우팅 (Active-Active)</td></tr>
+          <tr><td class="ty"><strong>LLM API 타임아웃</strong></td><td>그래프 노드 실패</td><td>Retry with exponential backoff + circuit breaker</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">SHELL</span><span class="lb-title">watchdog.sh (Worker 자동 복구 — crontab 1분)</span></div>
+      <div class="lb">
+<pre>#!/bin/bash
+HEALTHY=$(docker compose ps --format json | jq -r 'select(.Health=="healthy")' | wc -l)
+EXPECTED=2
+if [ "$HEALTHY" -lt "$EXPECTED" ]; then
+    docker compose up -d --force-recreate langgraph-worker
+    curl -X POST "https://hooks.internal/alert" \
+         -d "text=$(hostname) Worker 재시작 ($HEALTHY/$EXPECTED)"
+fi</pre>
       </div>
     </div>
   </section>
@@ -902,59 +1327,194 @@ with DAG("agent_schedule", schedule="*/10 9-15 * * 1-5"):
     </div>
   </section>
 
-  <!-- 11. LangSmith -->
-  <div class="ph" id="langsmith">
-    <div class="ph-line"><span class="ph-num">11</span><span class="ph-title">LangSmith 모니터링 설정</span></div>
+  <!-- 11. 모니터링 -->
+  <div class="ph" id="monitoring">
+    <div class="ph-line"><span class="ph-num">11</span><span class="ph-title">모니터링 — LangFuse (Self-hosted) / LangSmith</span></div>
     <div class="ph-div"></div>
   </div>
 
   <section class="sec">
+    <h3>옵션 비교</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>도구</th><th>형태</th><th>Self-host</th><th>특징</th><th>사내 폐쇄망</th></tr></thead>
+        <tbody>
+          <tr><td class="tp"><strong>LangSmith</strong></td><td>SaaS</td><td>Enterprise만</td><td>업계 표준, 자동 트레이싱</td><td class="tr">X (데이터 외부 전송)</td></tr>
+          <tr><td class="tg"><strong>LangFuse</strong></td><td>오픈소스</td><td>Docker 1줄</td><td>LangSmith 대체 1순위</td><td class="tg">O (권장)</td></tr>
+          <tr><td class="tb"><strong>Arize Phoenix</strong></td><td>오픈소스</td><td>단일 컨테이너</td><td>경량, 빠름</td><td class="tg">O</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">ℹ</span>
+      <div class="cb"><strong>사내 폐쇄망이면 LangSmith 사용 불가</strong> — 모든 트레이스가 외부 SaaS로 전송됩니다. LangFuse를 사내 VM에 Docker로 띄우면 동일한 기능을 폐쇄망 내부에서 사용할 수 있습니다.</div>
+    </div>
+
+    <h3>LangFuse (권장 — Self-hosted)</h3>
+
     <div class="mermaid-wrap">
-      <span class="mermaid-label">LangSmith 트레이싱 흐름</span>
+      <span class="mermaid-label">LangFuse 모니터링 아키텍처</span>
       <div class="mermaid">
 graph LR
-    AGENT["LangGraph Agent"] -->|자동 트레이스| LS["LangSmith Cloud"]
-    LS --> DASH["대시보드\n트레이스 시각화"]
-    LS --> ALERT["알림\n에러/지연/비용"]
-    LS --> EVAL["평가\n데이터셋 + A/B"]
+    subgraph Workers["LangGraph Workers"]
+        W1["Worker 1"]
+        W2["Worker 2"]
+        W3["Worker 3"]
+    end
 
-    style LS fill:#1a1030,stroke:#9060f0,color:#b080ff
+    subgraph LF_Stack["LangFuse (사내 VM)"]
+        LF_APP["LangFuse Server\n:3100"]
+        LF_DB["PostgreSQL\n(LangFuse 전용)"]
+    end
+
+    subgraph Features["제공 기능"]
+        TRACE["Traces\n노드별 워터폴"]
+        GEN["Generations\nLLM 입출력/토큰"]
+        SESS["Sessions\n사용자별 세션"]
+        DASH["Dashboard\n요약 차트"]
+        SCORE["Scores\n품질 평가"]
+        PROMPT["Prompts\n버전 관리"]
+    end
+
+    W1 -->|"CallbackHandler\n(비동기)"| LF_APP
+    W2 --> LF_APP
+    W3 --> LF_APP
+    LF_APP --> LF_DB
+    LF_APP --> Features
+
+    style Workers fill:#0d0f18,stroke:#30c880
+    style LF_Stack fill:#0d0f18,stroke:#9060f0
+    style Features fill:#0d0f18,stroke:#5a7af0
       </div>
     </div>
 
     <div class="layer code">
-      <div class="lh"><span class="lb-badge">설정</span><span class="lb-title">3단계 설정</span></div>
+      <div class="lh"><span class="lb-badge">DOCKER</span><span class="lb-title">LangFuse 설치 (사내 VM)</span></div>
       <div class="lb">
-<pre># 1. 가입: https://smith.langchain.com
-#    GitHub/Google 로그인 → API Key 발급
+<pre># docker-compose.langfuse.yml
+services:
+  langfuse:
+    image: langfuse/langfuse:2
+    ports: ["3100:3000"]
+    environment:
+      DATABASE_URL: postgresql://langfuse:pw@langfuse-db:5432/langfuse
+      NEXTAUTH_SECRET: your-secret-key
+      NEXTAUTH_URL: http://langfuse.internal:3100
+      SALT: your-salt
+      TELEMETRY_ENABLED: "false"         # 폐쇄망: 텔레메트리 비활성화
+    depends_on: [langfuse-db]
 
-# 2. 환경변수 설정 (.env)
-LANGSMITH_TRACING=true
-LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-LANGSMITH_API_KEY=lsv2_pt_xxxxxxxx
-LANGSMITH_PROJECT=my-agents
+  langfuse-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: pw
+      POSTGRES_DB: langfuse
+    volumes: [langfuse_data:/var/lib/postgresql/data]
 
-# 3. 끝! LangGraph가 자동으로 트레이싱합니다.
-# 별도 코드 변경 없음.</pre>
+volumes:
+  langfuse_data:
+
+# 실행
+# docker compose -f docker-compose.langfuse.yml up -d
+# → http://langfuse.internal:3100 접속</pre>
       </div>
     </div>
-    <div class="callout tip">
-      <span class="ci">💡</span>
-      <div class="cb"><strong>환경변수만 설정하면 끝</strong> LangGraph/LangChain은 LANGSMITH_TRACING=true만 있으면 모든 LLM 호출, 도구 실행, 노드 전환을 자동 기록. 코드 수정 불필요.</div>
+
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">LangGraph 연동 (코드 3줄)</span></div>
+      <div class="lb">
+<pre>from langfuse.callback import CallbackHandler
+
+# LangFuse 콜백 생성
+langfuse_handler = CallbackHandler(
+    host="http://langfuse.internal:3100",    # 사내 주소
+    public_key="pk-...",
+    secret_key="sk-...",
+)
+
+# 그래프 실행 시 config에 추가 — 끝
+result = await graph.ainvoke(
+    initial_state,
+    config={"callbacks": [langfuse_handler]}
+)
+# 자동 수집: 노드별 실행 시간, LLM 입출력, 토큰 수, 에러 트레이스</pre>
+      </div>
     </div>
 
-    <h3>LangSmith에서 확인할 수 있는 것</h3>
+    <h3>LangFuse Trace 상세 화면 예시</h3>
+    <div class="layer info">
+      <div class="lh"><span class="lb-badge">UI</span><span class="lb-title">Trace 워터폴 (노드별 실행 타임라인)</span></div>
+      <div class="lb">
+<pre>Trace: "올해 매출 상위 10개 부서"              2.8s  ✅
+├── router              0.08s  ✅  → nl2sql
+├── nl2sql_generate     1.20s  ✅  GPT-4o  tokens: 450→120
+│   └── LLM Call        1.18s      prompt: "Convert to SQL..."
+├── sql_validate        0.15s  ✅  passed
+├── sql_execute         0.35s  ✅  10 rows
+└── summarize           0.90s  ✅  GPT-4o  tokens: 200→350
+    └── LLM Call        0.88s      prompt: "Summarize these..."
+
+Total: 2.8s | Tokens: 650 in / 470 out | Cost: $0.023</pre>
+      </div>
+    </div>
+
+    <h3>LangFuse 제공 기능</h3>
     <div class="tw">
       <table>
         <thead><tr><th>기능</th><th>설명</th></tr></thead>
         <tbody>
-          <tr><td class="tb"><strong>트레이스 시각화</strong></td><td>노드별 실행 시간, 도구 호출, LLM 입출력 전체 확인</td></tr>
-          <tr><td class="tg"><strong>비용 추적</strong></td><td>에이전트별, 프로젝트별 토큰 사용량 + 비용</td></tr>
-          <tr><td class="ty"><strong>에러 모니터링</strong></td><td>실패한 실행 필터링 + 에러 스택 트레이스</td></tr>
-          <tr><td class="tp"><strong>평가 데이터셋</strong></td><td>질문-정답 쌍으로 에이전트 품질 자동 평가</td></tr>
-          <tr><td><strong>A/B 테스트</strong></td><td>프롬프트/모델 변경 전후 품질 비교</td></tr>
+          <tr><td class="tb"><strong>Traces</strong></td><td>노드별 실행 시간, 도구 호출, LLM 입출력 워터폴 시각화</td></tr>
+          <tr><td class="tg"><strong>Generations</strong></td><td>LLM 호출별 프롬프트, 응답, 토큰 수, 비용</td></tr>
+          <tr><td class="tp"><strong>Sessions</strong></td><td>사용자별 대화 세션 그룹핑</td></tr>
+          <tr><td class="ty"><strong>Dashboard</strong></td><td>일별 실행 수, 토큰 사용량, 에러율, 평균 지연시간</td></tr>
+          <tr><td class="tg"><strong>Scores</strong></td><td>품질 평가 — 자동(LLM-as-Judge) / 수동(사용자 피드백)</td></tr>
+          <tr><td class="tp"><strong>Prompts</strong></td><td>프롬프트 버전 관리 + 배포</td></tr>
+          <tr><td class="tb"><strong>Users</strong></td><td>사용자별 사용량, 비용, 에러율 추적</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h3>인프라 메트릭: Grafana (기존 활용)</h3>
+    <p style="color:var(--mid);margin-bottom:10px">LangFuse는 에이전트 실행 트레이싱 전용. CPU, 메모리, Worker 상태 등 인프라 메트릭은 기존 Grafana + Prometheus를 활용.</p>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">PYTHON</span><span class="lb-title">Prometheus 메트릭 노출 (Worker)</span></div>
+      <div class="lb">
+<pre>from prometheus_client import Counter, Histogram, Gauge
+
+graph_runs_total = Counter(
+    "langgraph_runs_total", "Total graph executions",
+    ["graph_id", "status"]
+)
+node_duration = Histogram(
+    "langgraph_node_duration_seconds", "Node execution time",
+    ["node_name"]
+)
+active_runs = Gauge(
+    "langgraph_active_runs", "Currently running graphs"
+)
+llm_tokens_total = Counter(
+    "langgraph_llm_tokens_total", "LLM tokens consumed",
+    ["direction"]   # input / output
+)</pre>
+      </div>
+    </div>
+
+    <h3>(참고) LangSmith — SaaS 환경용</h3>
+    <div class="layer code">
+      <div class="lh"><span class="lb-badge">설정</span><span class="lb-title">외부 인터넷 사용 가능한 경우</span></div>
+      <div class="lb">
+<pre># 환경변수만 설정하면 자동 트레이싱 (코드 변경 없음)
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY=lsv2_pt_xxxxxxxx
+LANGSMITH_PROJECT=my-agents</pre>
+      </div>
+    </div>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div class="cb"><strong>사내 폐쇄망에서는 사용 불가</strong> 모든 트레이스 데이터가 외부 LangSmith 서버로 전송됩니다. 사내 데이터 유출 가능성이 있으므로 폐쇄망에서는 LangFuse (Self-hosted)를 권장합니다.</div>
     </div>
   </section>
 
@@ -1106,7 +1666,9 @@ graph TD
     <div class="ref-item"><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank">LangGraph 공식 문서</a></div>
     <div class="ref-item"><a href="https://docs.langchain.com/oss/python/langgraph/quickstart" target="_blank">Quickstart 가이드</a></div>
     <div class="ref-item"><a href="https://pypi.org/project/langgraph-checkpoint-postgres/" target="_blank">langgraph-checkpoint-postgres (PyPI)</a></div>
-    <div class="ref-item"><a href="https://docs.langchain.com/langsmith/platform-setup" target="_blank">LangSmith 설정 가이드</a></div>
+    <div class="ref-item"><a href="https://langfuse.com/docs" target="_blank">LangFuse 공식 문서 (Self-hosted 가이드 포함)</a></div>
+    <div class="ref-item"><a href="https://langfuse.com/docs/integrations/langchain/tracing" target="_blank">LangFuse + LangChain/LangGraph 연동 가이드</a></div>
+    <div class="ref-item"><a href="https://docs.langchain.com/langsmith/platform-setup" target="_blank">LangSmith 설정 가이드 (SaaS 환경용)</a></div>
     <div class="ref-item"><a href="https://github.com/NicholasGoh/fastapi-mcp-langgraph-template" target="_blank">FastAPI + MCP + LangGraph 템플릿 (GitHub)</a></div>
     <div class="ref-item"><a href="https://medium.com/@termtrix/building-a-simple-ai-agent-using-fastapi-langgraph-mcp-03fc7ffbea59" target="_blank">FastAPI + LangGraph + MCP 튜토리얼 (Medium)</a></div>
   </section>
@@ -1115,7 +1677,7 @@ graph TD
 </div>
 
 <footer>
-  <p>langgraph-setup.guide · Step-by-Step · 2026.04.14</p>
+  <p>langgraph-setup.guide · Step-by-Step v2.0 · 2026.04.18</p>
   <p>MIT License · LangChain</p>
 </footer>
 
