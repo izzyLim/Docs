@@ -139,62 +139,8 @@
       <button onclick="document.querySelectorAll('details').forEach(d=>d.open=false)">전체 접기</button>
     </div>
 
-    <!-- ① NL2SQL & 데이터 분석 -->
+    <!-- ① AI 에이전트 프레임워크 -->
     <details open>
-      <summary>NL2SQL & 데이터 분석 <span class="badge">4</span></summary>
-      <ul>
-        <li><a class="card" href="nl2sql_design.html">
-          <span class="card-title">NL2SQL 설계 및 아키텍처</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">5-Layer 구조, 보안 원칙, WrenAI 기반 BIP 레퍼런스</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_data_layer_reference.html">
-          <span class="card-title">데이터 레이어 레퍼런스</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">NL2SQL 개념, 시맨틱 레이어, KG, 온톨로지 용어 정리</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_enterprise_playbook.html">
-          <span class="card-title">사내 적용 플레이북</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">BIP 경험 기반 Phase 0-4 단계별 가이드, 데이터/질문 유형 분류</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_implementation_plan_v2.html">
-          <span class="card-title">사내 적용 구현 계획 v2</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">OM + Cube + Agent 아키텍처, Oracle 19c 적용, Phase 로드맵</span>
-        </a></li>
-      </ul>
-    </details>
-
-    <!-- ② BIP 아키텍처 & 전략 -->
-    <details>
-      <summary>BIP 아키텍처 & 전략 <span class="badge">4</span></summary>
-      <ul>
-        <li><a class="card" href="bip_agent_strategy.html">
-          <span class="card-title">에이전트 전략 (차세대)</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">Planner Agent, NL2SQL/MCP/RAG 자율 조합, 로드맵</span>
-        </a></li>
-        <li><a class="card" href="bip_agents_architecture.html">
-          <span class="card-title">BIP-Agents 전체 아키텍처</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">에이전트 관계, 인프라, MCP, 데이터 흐름</span>
-        </a></li>
-        <li><a class="card" href="checklist_agent_architecture.html">
-          <span class="card-title">체크리스트 에이전트</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">Phase 6.3 — Haiku ReAct + 하이브리드 포맷</span>
-        </a></li>
-        <li><a class="card" href="stock_screener_architecture.html">
-          <span class="card-title">종목 추천 에이전트</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">스크리닝 + Bull/Bear 토론 구조</span>
-        </a></li>
-      </ul>
-    </details>
-
-    <!-- ③ AI 에이전트 프레임워크 -->
-    <details>
       <summary>AI 에이전트 프레임워크 <span class="badge">5</span></summary>
       <ul>
         <li><a class="card" href="langgraph_technical_guide.html">
@@ -225,7 +171,7 @@
       </ul>
     </details>
 
-    <!-- ④ AI 에이전트 리서치 -->
+    <!-- ② AI 에이전트 리서치 -->
     <details>
       <summary>AI 에이전트 리서치 <span class="badge">3</span></summary>
       <ul>
@@ -243,6 +189,60 @@
           <span class="card-title">에이전트 하네스 설계 (GAN)</span>
           <span class="card-sep">—</span>
           <span class="card-desc">Anthropic — 기획자/생성자/평가자 3-에이전트 패턴</span>
+        </a></li>
+      </ul>
+    </details>
+
+    <!-- ③ NL2SQL & 데이터 분석 -->
+    <details>
+      <summary>NL2SQL & 데이터 분석 <span class="badge">4</span></summary>
+      <ul>
+        <li><a class="card" href="nl2sql_design.html">
+          <span class="card-title">NL2SQL 설계 및 아키텍처</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">5-Layer 구조, 보안 원칙, WrenAI 기반 BIP 레퍼런스</span>
+        </a></li>
+        <li><a class="card" href="nl2sql_data_layer_reference.html">
+          <span class="card-title">데이터 레이어 레퍼런스</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">NL2SQL 개념, 시맨틱 레이어, KG, 온톨로지 용어 정리</span>
+        </a></li>
+        <li><a class="card" href="nl2sql_enterprise_playbook.html">
+          <span class="card-title">사내 적용 플레이북</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">BIP 경험 기반 Phase 0-4 단계별 가이드, 데이터/질문 유형 분류</span>
+        </a></li>
+        <li><a class="card" href="nl2sql_implementation_plan_v2.html">
+          <span class="card-title">사내 적용 구현 계획 v2</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">OM + Cube + Agent 아키텍처, Oracle 19c 적용, Phase 로드맵</span>
+        </a></li>
+      </ul>
+    </details>
+
+    <!-- ④ BIP 아키텍처 & 전략 -->
+    <details>
+      <summary>BIP 아키텍처 & 전략 <span class="badge">4</span></summary>
+      <ul>
+        <li><a class="card" href="bip_agent_strategy.html">
+          <span class="card-title">에이전트 전략 (차세대)</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">Planner Agent, NL2SQL/MCP/RAG 자율 조합, 로드맵</span>
+        </a></li>
+        <li><a class="card" href="bip_agents_architecture.html">
+          <span class="card-title">BIP-Agents 전체 아키텍처</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">에이전트 관계, 인프라, MCP, 데이터 흐름</span>
+        </a></li>
+        <li><a class="card" href="checklist_agent_architecture.html">
+          <span class="card-title">체크리스트 에이전트</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">Phase 6.3 — Haiku ReAct + 하이브리드 포맷</span>
+        </a></li>
+        <li><a class="card" href="stock_screener_architecture.html">
+          <span class="card-title">종목 추천 에이전트</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">스크리닝 + Bull/Bear 토론 구조</span>
         </a></li>
       </ul>
     </details>
