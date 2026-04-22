@@ -240,12 +240,12 @@
 
     <!-- NL2SQL -->
     <details>
-      <summary>NL2SQL & 데이터 레이어 <span class="badge">3</span></summary>
+      <summary>NL2SQL & 데이터 레이어 <span class="badge">4</span></summary>
       <ul>
         <li><a class="card" href="nl2sql_design.html">
           <span class="card-title">NL2SQL 설계 및 아키텍처</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">시스템 설계, 보안 원칙, Wren AI 연동</span>
+          <span class="card-desc">시스템 설계, 보안 원칙, Wren AI 연동 (BIP 레퍼런스)</span>
         </a></li>
         <li><a class="card" href="nl2sql_data_layer_reference.html">
           <span class="card-title">데이터 레이어 레퍼런스</span>
@@ -255,7 +255,12 @@
         <li><a class="card" href="nl2sql_enterprise_playbook.html">
           <span class="card-title">사내 적용 플레이북</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">엔터프라이즈 도입 가이드</span>
+          <span class="card-desc">BIP 경험 기반 데이터 정비 → 구축 → 튜닝 가이드</span>
+        </a></li>
+        <li><a class="card" href="nl2sql_implementation_plan_v2.html">
+          <span class="card-title">사내 적용 구현 계획 v2</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">OM + Cube + Agent 아키텍처, Oracle 19c 적용, Phase 로드맵</span>
         </a></li>
       </ul>
     </details>
@@ -274,20 +279,31 @@
 
     <!-- 인프라 가이드 -->
     <details>
-      <summary>인프라 & 도구 가이드 <span class="badge">2</span></summary>
+      <summary>인프라 & 도구 가이드 <span class="badge">4</span></summary>
       <ul>
-        <li><a class="card" href="guide_wrenai.html">
-          <span class="card-title">Wren AI 사용 가이드</span>
+        <li><a class="card" href="guide_cubejs.html">
+          <span class="card-title">Cube.js 사용 가이드</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">NL2SQL 엔진 기능, 설정, 모델링</span>
+          <span class="card-desc">Semantic Layer — 메트릭/차원/조인, Oracle 연결, REST API</span>
+        </a></li>
+        <li><a class="card" href="guide_dbt.html">
+          <span class="card-title">dbt Core 사용 가이드</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">데이터 변환, MetricFlow, Medallion 패턴, Docker 설치</span>
         </a></li>
         <li><a class="card" href="guide_openmetadata.html">
           <span class="card-title">OpenMetadata 사용 가이드</span>
           <span class="card-sep">—</span>
           <span class="card-desc">메타데이터 카탈로그, 거버넌스, 리니지</span>
         </a></li>
+        <li><a class="card" href="guide_wrenai.html">
+          <span class="card-title">Wren AI 사용 가이드</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">NL2SQL 엔진 기능, 설정, 모델링 (BIP 레퍼런스)</span>
+        </a></li>
       </ul>
     </details>
+
 
   </main>
 </body>
