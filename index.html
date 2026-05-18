@@ -197,55 +197,66 @@
     <details>
       <summary>NL2SQL & 데이터 분석 <span class="badge">10</span></summary>
       <ul>
+        <!-- 1. 세미나 메인 (발표용) -->
         <li><a class="card" href="seminar_semantic_layer.html">
-          <span class="card-title">[세미나] 시맨틱 레이어의 기술 이해와 실습</span>
+          <span class="card-title">① [세미나] 시맨틱 레이어의 기술 이해와 실습</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">90분 학습 자료 — 개념·dbt/Cube/WrenAI 비교·LangGraph·실습·의사결정 가이드</span>
+          <span class="card-desc">90분 메인 발표 자료 — 개념·dbt/Cube/WrenAI 비교·LangGraph·실습·의사결정 가이드</span>
         </a></li>
+
+        <!-- 2-4. 도구별 데모 결과 (세미나 보조) -->
         <li><a class="card" href="dbt_demo_results.html">
-          <span class="card-title">[세미나 데모] dbt 실제 사례 적용 결과</span>
+          <span class="card-title">② [데모] dbt 실제 사례 적용 결과</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">BIP PostgreSQL에 dbt 적용 — 6모델, 30 테스트, Lineage·용어집·Oracle 가이드</span>
+          <span class="card-desc">BIP PostgreSQL에 dbt 적용 — 6모델, 30 테스트, Lineage·용어집·Oracle 가이드·챗봇 패턴</span>
         </a></li>
         <li><a class="card" href="cube_demo_results.html">
-          <span class="card-title">[세미나 데모] Cube 실제 사례 적용 결과</span>
+          <span class="card-title">③ [데모] Cube 실제 사례 적용 결과</span>
           <span class="card-sep">—</span>
-          <span class="card-desc">BIP에 Cube 적용 — 7모델, 3가지 API, Playground, Oracle 가이드, 팩트-팩트 한계</span>
+          <span class="card-desc">BIP에 Cube 적용 — 7모델, 3가지 API, Playground, Oracle 가이드, 팩트-팩트 한계, 챗봇 패턴</span>
         </a></li>
         <li><a class="card" href="wrenai_demo_results.html">
-          <span class="card-title">[세미나 데모] WrenAI 실제 사례 적용 결과</span>
+          <span class="card-title">④ [데모] WrenAI 실제 사례 적용 결과</span>
           <span class="card-sep">—</span>
           <span class="card-desc">BIP에 WrenAI 적용 — A등급 100%, SQL Pairs 70, Oracle 19c 우회 3종, 통합 패턴 4종</span>
         </a></li>
-        <li><a class="card" href="nl2sql_design.html">
-          <span class="card-title">NL2SQL 설계 및 아키텍처</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">5-Layer 구조, 보안 원칙, WrenAI 기반 BIP 레퍼런스</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_data_layer_reference.html">
-          <span class="card-title">데이터 레이어 레퍼런스</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">NL2SQL 개념, 시맨틱 레이어, KG, 온톨로지 용어 정리</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_enterprise_playbook.html">
-          <span class="card-title">사내 적용 플레이북</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">BIP 경험 기반 Phase 0-4 단계별 가이드, 데이터/질문 유형 분류</span>
-        </a></li>
-        <li><a class="card" href="nl2sql_implementation_plan_v2.html">
-          <span class="card-title">사내 적용 구현 계획 v2</span>
-          <span class="card-sep">—</span>
-          <span class="card-desc">OM + Cube + Agent 아키텍처 (이력) — Cube 검증으로 v3로 전환됨</span>
-        </a></li>
+
+        <!-- 5-6. 사내 적용 (현재 방향 v3 + 상세 설계) -->
         <li><a class="card" href="nl2sql_implementation_plan_v3.html">
-          <span class="card-title">사내 적용 구현 계획 v3</span>
+          <span class="card-title">⑤ [사내 적용] 구현 계획 v3 (현재 방향)</span>
           <span class="card-sep">—</span>
           <span class="card-desc">LangGraph + QuerySpec — Phase 0-4 실행 가이드, Oracle 19c 방언, 5-Layer 보안</span>
         </a></li>
         <li><a class="card" href="nl2sql_agent_design.html">
-          <span class="card-title">LangGraph Agent 설계</span>
+          <span class="card-title">⑥ [사내 적용] LangGraph Agent 상세 설계</span>
           <span class="card-sep">—</span>
           <span class="card-desc">QuerySpec(중간 표현) + 규칙 기반 SQL 변환 + 자동 보정</span>
+        </a></li>
+
+        <!-- 7. 일반 가이드 (도구 무관) -->
+        <li><a class="card" href="nl2sql_enterprise_playbook.html">
+          <span class="card-title">⑦ [가이드] 사내 적용 플레이북 (도구 무관)</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">BIP 경험 기반 Phase 0-4 단계별 가이드, 데이터/질문 유형 분류</span>
+        </a></li>
+
+        <!-- 8. 의사결정 이력 -->
+        <li><a class="card" href="nl2sql_implementation_plan_v2.html">
+          <span class="card-title">⑧ [이력] 구현 계획 v2 (Cube 시도 → v3 전환)</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">OM + Cube + Agent 아키텍처 — Cube 검증으로 v3로 전환된 이력</span>
+        </a></li>
+
+        <!-- 9-10. 레퍼런스 (BIP 기존 아키텍처 + 개념) -->
+        <li><a class="card" href="nl2sql_design.html">
+          <span class="card-title">⑨ [레퍼런스] NL2SQL 설계 (BIP Wren AI 기반)</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">5-Layer 구조, 보안 원칙, BIP-Pipeline 검증된 아키텍처</span>
+        </a></li>
+        <li><a class="card" href="nl2sql_data_layer_reference.html">
+          <span class="card-title">⑩ [레퍼런스] 데이터 레이어 + 개념 용어</span>
+          <span class="card-sep">—</span>
+          <span class="card-desc">NL2SQL 개념, 시맨틱 레이어, KG, 온톨로지 용어 정리</span>
         </a></li>
       </ul>
     </details>
